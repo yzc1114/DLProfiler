@@ -34,16 +34,17 @@ def main():
                         type=int,
                         required=True,
                         help='the batch size of the model')
-    parser.add_argument('--is-train',
-                        type=bool,
-                        required=True,
-                        choices=[True, False],
-                        help='profile training or inference')
+    parser.add_argument('--train', action='store_true')
+    parser.add_argument('--inference', dest='train', action='store_false')
+    parser.set_defaults(train=True)
     parser.add_argument('--dist-data-parallel',
-                        type=bool,
-                        default=True,
-                        choices=[True, False],
+                        action="store_true",
                         help='use distributed data parallel to train, default is true')
+    parser.add_argument('--dist-model-parallel',
+                        dest="dist_data_parallel",
+                        action="store_true",
+                        help='use distributed model parallel to train, default is false')
+    parser.set_defaults(dist_data_parallel=True)
     parser.add_argument('--process-group-backend',
                         type=str,
                         choices=["gloo", "nccl"],
@@ -77,16 +78,17 @@ def main():
     init_config(master_addr=args.master_addr, master_port=args.master_port, world_size=args.world_size,
                 local_rank=args.local_rank, process_group_backend=args.process_group_backend,
                 mem_utilization_monitor_interval=args.cuda_monitor_interval)
-
-    model_profiler = generate_model_profiler(model_name=args.model, is_train=args.is_train,
+    model_profiler = generate_model_profiler(model_name=args.model, is_train=args.train,
                                              is_DDP=args.dist_data_parallel)
+    print(f"model profiler generated: model = {args.model}, starting profile for {args.duration_sec} seconds")
     profiled_iterator = model_profiler.profile(batch_size=args.batch_size, duration_sec=args.duration_sec)
     profiled_data = profiled_iterator.to_dict()
+    print(f"model {args.model} profiling done")
     model = ProfiledDataModel(
         model_name=args.model,
         batch_size=args.batch_size,
         duration_sec=args.duration_sec,
-        is_train=args.is_train,
+        is_train=args.train,
         is_DDP=args.dist_data_parallel,
         process_group_backend=args.process_group_backend,
         world_size=args.world_size,
@@ -104,7 +106,9 @@ def main():
     data_collector_url = args.data_collector_url
     response = requests.post(urljoin(data_collector_url, f"{session_id}/{args.local_rank}"), data=model.json())
     if response.status_code != http.HTTPStatus.OK:
+        print(f"problem encountered sending profiled data to {data_collector_url}, status code = {response.status_code}")
         sys.exit(-1)
+    print(f"profiled data is sent to {data_collector_url}")
     return
 
 

@@ -35,10 +35,18 @@ def receive(*,
             rank: int = Path(..., title="rank"),
             profiled_data_model: ProfiledDataModel):
     filename = datetime.datetime.now().strftime(f"{session_id}_rank_{rank}_%Y-%m-%d-%H-%M-%S.json")
-    filepath = os.path.join(args.data_dir_path, filename)
+    session_dir = os.path.join(args.data_dir_path, session_id)
+    if not os.path.exists(session_dir):
+        os.mkdir(session_dir)
+    filepath = os.path.join(session_dir, filename)
     with open(filepath, 'w') as f:
         json.dump(profiled_data_model.dict(), f, indent='\t')
     return {}
+
+
+@app.get("/health")
+def health():
+    return "I'm healthy"
 
 
 if __name__ == '__main__':

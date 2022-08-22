@@ -1,0 +1,52 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dl-profiler-data-collector-svc
+spec:
+  selector:
+    app: dl-profiler-data-collector
+  ports:
+    - protocol: "TCP"
+      port: 39911
+      targetPort: 39911
+      nodePort: 32101
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: dl-profiler-data-collector-stateful-set
+spec:
+  selector:
+    matchLabels:
+      app: dl-profiler-data-collector
+  replicas: 1
+  serviceName: dl-profiler-data-collector-svc
+  template:
+    metadata:
+      labels:
+        app: dl-profiler-data-collector
+    spec:
+      containers:
+      - name: dl-profiler-data-collector
+        image: yzc1114/dl-profiler:v0.1
+        ports:
+          - containerPort: 39911
+        imagePullPolicy: IfNotPresent
+        args: ["data_collector.py", "--data-dir-path", "/data-dir"]
+        volumeMounts:
+        - mountPath: /data-dir
+          name: local-storage-claim
+      restartPolicy: Always
+  volumeClaimTemplates:
+  - metadata:
+      name: local-storage-claim
+    spec:
+      storageClassName: "local-storage"
+      accessModes:
+        - ReadWriteMany
+      resources:
+        requests:
+          storage: 1Gi
+---
