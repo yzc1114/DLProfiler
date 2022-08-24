@@ -8,8 +8,8 @@ spec:
     app: dl-profiler-data-collector
   ports:
     - protocol: "TCP"
-      port: 39911
-      targetPort: 39911
+      port: 80
+      targetPort: 80
       nodePort: 32101
   type: NodePort
 ---
@@ -32,9 +32,9 @@ spec:
       - name: dl-profiler-data-collector
         image: yzc1114/dl-profiler:v0.1
         ports:
-          - containerPort: 39911
+          - containerPort: 80
         imagePullPolicy: IfNotPresent
-        args: ["data_collector.py", "--data-dir-path", "/data-dir"]
+        args: ["python data_collector.py --data-dir-path /data-dir"]
         volumeMounts:
         - mountPath: /data-dir
           name: local-storage-claim

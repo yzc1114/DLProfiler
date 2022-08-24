@@ -86,7 +86,7 @@ class SageMakerTrainingArguments(TrainingArguments):
             device = torch.device("cpu")
             self._n_gpu = 0
         elif is_sagemaker_model_parallel_available():
-            local_rank = smp.local_rank()
+            local_rank = smp.rank()
             device = torch.device("cuda", local_rank)
             self._n_gpu = 1
         elif is_sagemaker_dp_enabled():

@@ -74,7 +74,7 @@ def configure_logger(model_args: ModelArguments, training_args: TrainingArgument
     logging_level = logging.WARNING
     if model_args.verbose_logging:
         logging_level = logging.DEBUG
-    elif trainer_utils.is_main_process(training_args.local_rank):
+    elif trainer_utils.is_main_process(training_args.rank):
         logging_level = logging.INFO
     logger.setLevel(logging_level)
 

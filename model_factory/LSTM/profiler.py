@@ -2,7 +2,7 @@ import torch
 
 from common import Config
 from model_factory.LSTM.word_language_model import main as LSTMMain
-from profiler_objects import Profileable, ProfileIterator
+from profiler_utils import Profileable, ProfileIterator
 
 
 class LSTMTrain(Profileable):

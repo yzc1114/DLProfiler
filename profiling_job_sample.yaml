@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: profiler-job-id-50-2
+  namespace: dl-profiler
+  labels:
+    job_name: profiler-job-id-50-2
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: profiler-job-pod-id-50-2
+      name: profiler-job-pod-id-50-2
+    spec:
+      nodeName: dell04
+      restartPolicy: Never
+      hostNetwork: true
+      containers:
+        - image: yzc1114/dl-profiler:v0.1
+          imagePullPolicy: IfNotPresent
+          name: dl-profiler-job
+          args:
+            - "python profiler.py --session-id testsession-tencent-2 --data-collector-url http://133.133.135.75:32101/receive --process-group-backend gloo --model ResNet50 --duration-sec 30 --batch-size 32 --train --computation-proportion 50 --master-addr 133.133.135.74 --master-port 12345 --world-size 2 --local-rank 0 --rank 1"
+          resources:
+            requests:
+              tencent.com/vcuda-core: 50
+              tencent.com/vcuda-memory: 44
+            limits:
+              tencent.com/vcuda-core: 50
+              tencent.com/vcuda-memory: 44

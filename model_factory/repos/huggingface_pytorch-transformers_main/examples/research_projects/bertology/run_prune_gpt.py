@@ -78,7 +78,7 @@ def compute_heads_importance(
 
     tot_tokens = 0.0
     total_loss = 0.0
-    for step, inputs in enumerate(tqdm(eval_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])):
+    for step, inputs in enumerate(tqdm(eval_dataloader, desc="Iteration", disable=args.rank not in [-1, 0])):
         inputs = tuple(t.to(args.device) for t in inputs)
         (input_ids,) = inputs
 

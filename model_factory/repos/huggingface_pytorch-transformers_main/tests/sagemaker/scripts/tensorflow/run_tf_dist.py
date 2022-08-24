@@ -122,7 +122,7 @@ if __name__ == "__main__":
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
         if gpus:
-            tf.config.experimental.set_visible_devices(gpus[sdp.local_rank()], "GPU")
+            tf.config.experimental.set_visible_devices(gpus[sdp.rank()], "GPU")
 
     # Load model and tokenizer
     model = TFAutoModelForSequenceClassification.from_pretrained(args.model_name_or_path)

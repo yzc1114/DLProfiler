@@ -1206,7 +1206,7 @@ class TrainingArguments:
             device = xm.xla_device()
             self._n_gpu = 0
         elif is_sagemaker_mp_enabled():
-            local_rank = smp.local_rank()
+            local_rank = smp.rank()
             device = torch.device("cuda", local_rank)
             self._n_gpu = 1
         elif is_sagemaker_dp_enabled():
@@ -1343,7 +1343,7 @@ class TrainingArguments:
         if is_torch_tpu_available():
             return xm.get_local_ordinal()
         elif is_sagemaker_mp_enabled():
-            return smp.local_rank()
+            return smp.rank()
         elif is_sagemaker_dp_enabled():
             return dist.get_rank()
         elif self.local_rank != -1:

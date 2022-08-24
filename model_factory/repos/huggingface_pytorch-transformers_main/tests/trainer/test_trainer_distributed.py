@@ -88,8 +88,8 @@ if __name__ == "__main__":
     training_args = parser.parse_args_into_dataclasses()[0]
 
     logger.warning(
-        f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}, "
-        f"distributed training: {training_args.local_rank != -1}"
+        f"Process rank: {training_args.rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}, "
+        f"distributed training: {training_args.rank != -1}"
     )
 
     # Essentially, what we want to verify in the distributed case is that we get all samples back,
@@ -100,7 +100,7 @@ if __name__ == "__main__":
         def compute_metrics(p: EvalPrediction) -> Dict:
             sequential = list(range(len(dataset)))
             success = p.predictions.tolist() == sequential and p.label_ids.tolist() == sequential
-            if not success and training_args.local_rank == 0:
+            if not success and training_args.rank == 0:
                 logger.warning(
                     "Predictions and/or labels do not match expected results:\n  - predictions: "
                     f"{p.predictions.tolist()}\n  - labels: {p.label_ids.tolist()}\n  - expected: {sequential}"

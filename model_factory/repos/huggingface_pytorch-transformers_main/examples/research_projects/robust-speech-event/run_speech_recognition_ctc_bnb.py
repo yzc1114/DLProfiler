@@ -396,15 +396,15 @@ def main():
         datefmt="%m/%d/%Y %H:%M:%S",
         handlers=[logging.StreamHandler(sys.stdout)],
     )
-    logger.setLevel(logging.INFO if is_main_process(training_args.local_rank) else logging.WARN)
+    logger.setLevel(logging.INFO if is_main_process(training_args.rank) else logging.WARN)
 
     # Log on each process the small summary:
     logger.warning(
-        f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}"
-        f"distributed training: {bool(training_args.local_rank != -1)}, 16-bits training: {training_args.fp16}"
+        f"Process rank: {training_args.rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}"
+        f"distributed training: {bool(training_args.rank != -1)}, 16-bits training: {training_args.fp16}"
     )
     # Set the verbosity to info of the Transformers logger (on main process only):
-    if is_main_process(training_args.local_rank):
+    if is_main_process(training_args.rank):
         transformers.utils.logging.set_verbosity_info()
     logger.info("Training/evaluation parameters %s", training_args)
 
@@ -660,7 +660,7 @@ def main():
         return metrics
 
     # Now save everything to be able to create a single processor later
-    if is_main_process(training_args.local_rank):
+    if is_main_process(training_args.rank):
         # save feature extractor, tokenizer and config
         feature_extractor.save_pretrained(training_args.output_dir)
         tokenizer.save_pretrained(training_args.output_dir)

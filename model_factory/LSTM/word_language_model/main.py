@@ -50,8 +50,8 @@ def do_profile(batch_size=32, duration_sec=10, device="0", is_train=True):
         return tuple(ls)
 
     hidden = gen_hidden(hidden)
-    model = DDP(model)
     model = model.to(device)
+    model = DDP(model)
 
     criterion = nn.NLLLoss()
 

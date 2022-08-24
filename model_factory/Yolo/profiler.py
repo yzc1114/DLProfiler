@@ -7,7 +7,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from common import Config
 from model_factory.Yolo.models import load_yolov5s
 from model_factory.hub_common_profile import common_inference_template
-from profiler_objects import Profileable, ProfileIterator
+from profiler_utils import Profileable, ProfileIterator
 
 
 def yolov5s_rand_input(batch_size: int):
@@ -20,8 +20,8 @@ def yolov5s_rand_output():
 
 def yolov5_train_template(model: torch.nn.Module, batch_size: int, duration_sec: int,
                           rand_input: Callable[[int], torch.Tensor], rand_output: Callable[[], torch.Tensor]):
+    model = model.to(Config().local_rank)
     model = DDP(model)
-    model.to(Config().local_rank)
     model.train()
     iterator = ProfileIterator(itertools.count(0), duration_sec)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)

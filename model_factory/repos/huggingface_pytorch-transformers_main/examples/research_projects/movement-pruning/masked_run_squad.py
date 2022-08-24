@@ -113,11 +113,11 @@ def to_list(tensor):
 
 def train(args, train_dataset, model, tokenizer, teacher=None):
     """Train the model"""
-    if args.local_rank in [-1, 0]:
+    if args.rank in [-1, 0]:
         tb_writer = SummaryWriter(log_dir=args.output_dir)
 
     args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
-    train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
+    train_sampler = RandomSampler(train_dataset) if args.rank == -1 else DistributedSampler(train_dataset)
     train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=args.train_batch_size)
 
     if args.max_steps > 0:
@@ -178,11 +178,11 @@ def train(args, train_dataset, model, tokenizer, teacher=None):
         model = nn.DataParallel(model)
 
     # Distributed training (should be after apex fp16 initialization)
-    if args.local_rank != -1:
+    if args.rank != -1:
         model = nn.parallel.DistributedDataParallel(
             model,
-            device_ids=[args.local_rank],
-            output_device=args.local_rank,
+            device_ids=[args.rank],
+            output_device=args.rank,
             find_unused_parameters=True,
         )
 
@@ -195,7 +195,7 @@ def train(args, train_dataset, model, tokenizer, teacher=None):
         "  Total train batch size (w. parallel, distributed & accumulation) = %d",
         args.train_batch_size
         * args.gradient_accumulation_steps
-        * (torch.distributed.get_world_size() if args.local_rank != -1 else 1),
+        * (torch.distributed.get_world_size() if args.rank != -1 else 1),
     )
     logger.info("  Gradient Accumulation steps = %d", args.gradient_accumulation_steps)
     logger.info("  Total optimization steps = %d", t_total)
@@ -228,13 +228,13 @@ def train(args, train_dataset, model, tokenizer, teacher=None):
     tr_loss, logging_loss = 0.0, 0.0
     model.zero_grad()
     train_iterator = trange(
-        epochs_trained, int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0]
+        epochs_trained, int(args.num_train_epochs), desc="Epoch", disable=args.rank not in [-1, 0]
     )
     # Added here for reproducibility
     set_seed(args)
 
     for _ in train_iterator:
-        epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
+        epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.rank not in [-1, 0])
         for step, batch in enumerate(epoch_iterator):
 
             # Skip past any already trained steps if resuming training
@@ -343,7 +343,7 @@ def train(args, train_dataset, model, tokenizer, teacher=None):
                 else:
                     nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
 
-                if args.local_rank in [-1, 0] and args.logging_steps > 0 and global_step % args.logging_steps == 0:
+                if args.rank in [-1, 0] and args.logging_steps > 0 and global_step % args.logging_steps == 0:
                     tb_writer.add_scalar("threshold", threshold, global_step)
                     for name, param in model.named_parameters():
                         if not param.requires_grad:
@@ -369,9 +369,9 @@ def train(args, train_dataset, model, tokenizer, teacher=None):
                 global_step += 1
 
                 # Log metrics
-                if args.local_rank in [-1, 0] and args.logging_steps > 0 and global_step % args.logging_steps == 0:
+                if args.rank in [-1, 0] and args.logging_steps > 0 and global_step % args.logging_steps == 0:
                     # Only evaluate when single GPU otherwise metrics may not average well
-                    if args.local_rank == -1 and args.evaluate_during_training:
+                    if args.rank == -1 and args.evaluate_during_training:
                         results = evaluate(args, model, tokenizer)
                         for key, value in results.items():
                             tb_writer.add_scalar("eval_{}".format(key), value, global_step)
@@ -406,7 +406,7 @@ def train(args, train_dataset, model, tokenizer, teacher=None):
                     logging_loss = tr_loss
 
                 # Save model checkpoint
-                if args.local_rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
+                if args.rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
                     output_dir = os.path.join(args.output_dir, "checkpoint-{}".format(global_step))
                     if not os.path.exists(output_dir):
                         os.makedirs(output_dir)
@@ -429,7 +429,7 @@ def train(args, train_dataset, model, tokenizer, teacher=None):
             train_iterator.close()
             break
 
-    if args.local_rank in [-1, 0]:
+    if args.rank in [-1, 0]:
         tb_writer.close()
 
     return global_step, tr_loss / global_step
@@ -438,7 +438,7 @@ def train(args, train_dataset, model, tokenizer, teacher=None):
 def evaluate(args, model, tokenizer, prefix=""):
     dataset, examples, features = load_and_cache_examples(args, tokenizer, evaluate=True, output_examples=True)
 
-    if not os.path.exists(args.output_dir) and args.local_rank in [-1, 0]:
+    if not os.path.exists(args.output_dir) and args.rank in [-1, 0]:
         os.makedirs(args.output_dir)
 
     args.eval_batch_size = args.per_gpu_eval_batch_size * max(1, args.n_gpu)
@@ -583,7 +583,7 @@ def evaluate(args, model, tokenizer, prefix=""):
 
 
 def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False):
-    if args.local_rank not in [-1, 0] and not evaluate:
+    if args.rank not in [-1, 0] and not evaluate:
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
         torch.distributed.barrier()
 
@@ -644,11 +644,11 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
             threads=args.threads,
         )
 
-        if args.local_rank in [-1, 0]:
+        if args.rank in [-1, 0]:
             logger.info("Saving features into cached file %s", cached_features_file)
             torch.save({"features": features, "dataset": dataset, "examples": examples}, cached_features_file)
 
-    if args.local_rank == 0 and not evaluate:
+    if args.rank == 0 and not evaluate:
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
         torch.distributed.barrier()
 

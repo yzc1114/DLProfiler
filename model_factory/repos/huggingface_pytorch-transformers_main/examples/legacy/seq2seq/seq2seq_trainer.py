@@ -158,7 +158,7 @@ class Seq2SeqTrainer(Trainer):
 
             return (
                 RandomSampler(self.train_dataset)
-                if self.args.local_rank == -1
+                if self.args.rank == -1
                 else DistributedSampler(self.train_dataset)
             )
 

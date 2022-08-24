@@ -1555,7 +1555,7 @@ class Trainer:
 
                 if (
                     ((step + 1) % args.gradient_accumulation_steps != 0)
-                    and args.local_rank != -1
+                    and args.rank != -1
                     and args._no_sync_in_gradient_accumulation
                 ):
                     # Avoid unnecessary DDP synchronization since there will be no backward pass on this example.
@@ -1675,7 +1675,7 @@ class Trainer:
             # Wait for everyone to get here so we are sur the model has been saved by process 0.
             if is_torch_tpu_available():
                 xm.rendezvous("load_best_model_at_end")
-            elif args.local_rank != -1:
+            elif args.rank != -1:
                 dist.barrier()
             elif is_sagemaker_mp_enabled():
                 smp.barrier()

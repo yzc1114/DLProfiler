@@ -6,4 +6,4 @@ COPY . .
 
 RUN mkdir /data-dir && pip install -r requirements.txt
 
-ENTRYPOINT ["python"]
+ENTRYPOINT ["/bin/bash", "-c"]

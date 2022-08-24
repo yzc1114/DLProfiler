@@ -65,11 +65,11 @@ def set_seed(args):
 
 def train(args, train_dataset, model, tokenizer, criterion):
     """Train the model"""
-    if args.local_rank in [-1, 0]:
+    if args.rank in [-1, 0]:
         tb_writer = SummaryWriter()
 
     args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
-    train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
+    train_sampler = RandomSampler(train_dataset) if args.rank == -1 else DistributedSampler(train_dataset)
     train_dataloader = DataLoader(
         train_dataset,
         sampler=train_sampler,
@@ -110,9 +110,9 @@ def train(args, train_dataset, model, tokenizer, criterion):
         model = nn.DataParallel(model)
 
     # Distributed training (should be after apex fp16 initialization)
-    if args.local_rank != -1:
+    if args.rank != -1:
         model = nn.parallel.DistributedDataParallel(
-            model, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True
+            model, device_ids=[args.rank], output_device=args.rank, find_unused_parameters=True
         )
 
     # Train!
@@ -124,7 +124,7 @@ def train(args, train_dataset, model, tokenizer, criterion):
         "  Total train batch size (w. parallel, distributed & accumulation) = %d",
         args.train_batch_size
         * args.gradient_accumulation_steps
-        * (torch.distributed.get_world_size() if args.local_rank != -1 else 1),
+        * (torch.distributed.get_world_size() if args.rank != -1 else 1),
     )
     logger.info("  Gradient Accumulation steps = %d", args.gradient_accumulation_steps)
     logger.info("  Total optimization steps = %d", t_total)
@@ -133,10 +133,10 @@ def train(args, train_dataset, model, tokenizer, criterion):
     tr_loss, logging_loss = 0.0, 0.0
     best_f1, n_no_improve = 0, 0
     model.zero_grad()
-    train_iterator = trange(int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0])
+    train_iterator = trange(int(args.num_train_epochs), desc="Epoch", disable=args.rank not in [-1, 0])
     set_seed(args)  # Added here for reproductibility
     for _ in train_iterator:
-        epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
+        epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.rank not in [-1, 0])
         for step, batch in enumerate(epoch_iterator):
             model.train()
             batch = tuple(t.to(args.device) for t in batch)
@@ -175,10 +175,10 @@ def train(args, train_dataset, model, tokenizer, criterion):
                 model.zero_grad()
                 global_step += 1
 
-                if args.local_rank in [-1, 0] and args.logging_steps > 0 and global_step % args.logging_steps == 0:
+                if args.rank in [-1, 0] and args.logging_steps > 0 and global_step % args.logging_steps == 0:
                     logs = {}
                     if (
-                        args.local_rank == -1 and args.evaluate_during_training
+                        args.rank == -1 and args.evaluate_during_training
                     ):  # Only evaluate when single GPU otherwise metrics may not average well
                         results = evaluate(args, model, tokenizer, criterion)
                         for key, value in results.items():
@@ -195,7 +195,7 @@ def train(args, train_dataset, model, tokenizer, criterion):
                         tb_writer.add_scalar(key, value, global_step)
                     print(json.dumps({**logs, **{"step": global_step}}))
 
-                if args.local_rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
+                if args.rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
                     # Save model checkpoint
                     output_dir = os.path.join(args.output_dir, "checkpoint-{}".format(global_step))
                     if not os.path.exists(output_dir):
@@ -214,7 +214,7 @@ def train(args, train_dataset, model, tokenizer, criterion):
             train_iterator.close()
             break
 
-        if args.local_rank == -1:
+        if args.rank == -1:
             results = evaluate(args, model, tokenizer, criterion)
             if results["micro_f1"] > best_f1:
                 best_f1 = results["micro_f1"]
@@ -226,7 +226,7 @@ def train(args, train_dataset, model, tokenizer, criterion):
                 train_iterator.close()
                 break
 
-    if args.local_rank in [-1, 0]:
+    if args.rank in [-1, 0]:
         tb_writer.close()
 
     return global_step, tr_loss / global_step
@@ -237,7 +237,7 @@ def evaluate(args, model, tokenizer, criterion, prefix=""):
     eval_output_dir = args.output_dir
     eval_dataset = load_examples(args, tokenizer, evaluate=True)
 
-    if not os.path.exists(eval_output_dir) and args.local_rank in [-1, 0]:
+    if not os.path.exists(eval_output_dir) and args.rank in [-1, 0]:
         os.makedirs(eval_output_dir)
 
     args.eval_batch_size = args.per_gpu_eval_batch_size * max(1, args.n_gpu)

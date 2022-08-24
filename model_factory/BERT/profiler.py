@@ -7,7 +7,7 @@ from transformers import AutoTokenizer
 
 from common import Config
 from model_factory.BERT.models import load_bert_base
-from profiler_objects import Profileable, ProfileIterator
+from profiler_utils import Profileable, ProfileIterator
 
 tokenizer_path = str(pathlib.Path(__file__).parent.parent / "repos" / "bert-base-uncased")
 
@@ -35,8 +35,8 @@ def bert_rand_output(batch_size: int):
 
 
 def bert_train_template(model: torch.nn.Module, batch_size: int, duration_sec: int, rand_input, rand_output):
+    model = model.to(Config().local_rank)
     model = DDP(model)
-    model.to(Config().local_rank)
     model.train()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     iterator = ProfileIterator(itertools.count(0), duration_sec)

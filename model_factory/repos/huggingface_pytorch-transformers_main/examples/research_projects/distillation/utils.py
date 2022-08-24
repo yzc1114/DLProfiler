@@ -53,7 +53,7 @@ def init_gpu_params(params):
     Handle single and multi-GPU / multi-node.
     """
     if params.n_gpu <= 0:
-        params.local_rank = 0
+        params.rank = 0
         params.master_port = -1
         params.is_master = True
         params.multi_gpu = False
@@ -63,7 +63,7 @@ def init_gpu_params(params):
 
     logger.info("Initializing GPUs")
     if params.n_gpu > 1:
-        assert params.local_rank != -1
+        assert params.rank != -1
 
         params.world_size = int(os.environ["WORLD_SIZE"])
         params.n_gpu_per_node = int(os.environ["N_GPU_NODE"])
@@ -79,11 +79,11 @@ def init_gpu_params(params):
 
     # local job (single GPU)
     else:
-        assert params.local_rank == -1
+        assert params.rank == -1
 
         params.n_nodes = 1
         params.node_id = 0
-        params.local_rank = 0
+        params.rank = 0
         params.global_rank = 0
         params.world_size = 1
         params.n_gpu_per_node = 1
@@ -92,18 +92,18 @@ def init_gpu_params(params):
     # sanity checks
     assert params.n_nodes >= 1
     assert 0 <= params.node_id < params.n_nodes
-    assert 0 <= params.local_rank <= params.global_rank < params.world_size
+    assert 0 <= params.rank <= params.global_rank < params.world_size
     assert params.world_size == params.n_nodes * params.n_gpu_per_node
 
     # define whether this is the master process / if we are in multi-node distributed mode
-    params.is_master = params.node_id == 0 and params.local_rank == 0
+    params.is_master = params.node_id == 0 and params.rank == 0
     params.multi_node = params.n_nodes > 1
 
     # summary
     PREFIX = f"--- Global rank: {params.global_rank} - "
     logger.info(PREFIX + "Number of nodes: %i" % params.n_nodes)
     logger.info(PREFIX + "Node ID        : %i" % params.node_id)
-    logger.info(PREFIX + "Local rank     : %i" % params.local_rank)
+    logger.info(PREFIX + "Local rank     : %i" % params.rank)
     logger.info(PREFIX + "World size     : %i" % params.world_size)
     logger.info(PREFIX + "GPUs per node  : %i" % params.n_gpu_per_node)
     logger.info(PREFIX + "Master         : %s" % str(params.is_master))
@@ -112,7 +112,7 @@ def init_gpu_params(params):
     logger.info(PREFIX + "Hostname       : %s" % socket.gethostname())
 
     # set GPU device
-    torch.cuda.set_device(params.local_rank)
+    torch.cuda.set_device(params.rank)
 
     # initialize multi-GPU
     if params.multi_gpu:

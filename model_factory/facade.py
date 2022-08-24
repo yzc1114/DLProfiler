@@ -4,7 +4,7 @@ from model_factory.Mobile.profiler import MobileNetV2Inference, MobileNetV2Train
 from model_factory.ResNet.profiler import ResNet50Inference, ResNet50Train, ResNet18Inference, ResNet18Train
 from model_factory.VGG.profiler import VGG16Inference, VGG16Train
 from model_factory.Yolo.profiler import YoloV5sInference, YoloV5sTrain
-from profiler_objects import ModelDescriptions
+from objects import ModelDescriptions
 
 DDP_train_profilers = dict(
     {

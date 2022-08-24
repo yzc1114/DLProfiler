@@ -3,7 +3,7 @@ import torch
 from common import Config
 from model_factory.Mobile.models import load_mobile_net_v2
 from model_factory.hub_common_profile import common_train_template, common_inference_template
-from profiler_objects import Profileable, ProfileIterator
+from profiler_utils import Profileable, ProfileIterator
 
 
 def vgg_rand_input(batch_size: int):
