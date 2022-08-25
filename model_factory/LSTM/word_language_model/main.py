@@ -7,7 +7,7 @@ import pathlib
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 from model_factory.LSTM.word_language_model import data
-from profiler_objects import ProfileIterator
+from profiler_utils import ProfileIterator
 
 
 def do_profile(batch_size=32, duration_sec=10, device="0", is_train=True):

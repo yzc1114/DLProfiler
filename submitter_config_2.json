@@ -405,6 +405,68 @@
           "memory_proportions": null
         }
       }
+    },
+    "colocate": {
+      "dell03": {
+        "0": [
+          [
+            {
+              "model_name": "MobileNet",
+              "is_train": true,
+              "batch_sizes": [
+                32
+              ],
+              "computation_proportions": [
+                50
+              ],
+              "memory_proportions": [
+                44
+              ]
+            },
+            {
+              "model_name": "MobileNet",
+              "is_train": false,
+              "batch_sizes": [
+                32
+              ],
+              "computation_proportions": [
+                50
+              ],
+              "memory_proportions": [
+                16
+              ]
+            }
+          ],
+          [
+            {
+              "model_name": "ResNet50",
+              "is_train": true,
+              "batch_sizes": [
+                32
+              ],
+              "computation_proportions": [
+                50
+              ],
+              "memory_proportions": [
+                16
+              ]
+            },
+            {
+              "model_name": "MobileNet",
+              "is_train": false,
+              "batch_sizes": [
+                32
+              ],
+              "computation_proportions": [
+                50
+              ],
+              "memory_proportions": [
+                16
+              ]
+            }
+          ]
+        ]
+      }
     }
   }
 }
