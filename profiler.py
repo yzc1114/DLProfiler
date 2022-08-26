@@ -75,7 +75,7 @@ def main():
                         help='master addr used in distributed data parallel')
     parser.add_argument('--master-port',
                         type=int,
-                        default=39910,
+                        default=12345,
                         help='master port used in distributed data parallel')
     parser.add_argument('--cuda-monitor-interval',
                         type=float,

@@ -5,7 +5,7 @@ import time
 import traceback
 from collections import defaultdict
 from itertools import product
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional, Union, Tuple
 
 import shortuuid
 from kubernetes import client, config
@@ -145,82 +145,92 @@ class Config:
                                                   acc_specs=acc_specs,
                                                   ip_addr=ip_addr)
         job_specs_raw = config_json["job_specs"]
-        mono_job_specs_raw = job_specs_raw["mono"]
-        self.mono_jobs = list()
-        for model_name, mono_job_spec_raw in mono_job_specs_raw.items():
-            assert model_name in model_names, f"wrong model name {model_name}"
-            for train_or_inference_text, job_spec_combinations in mono_job_spec_raw.items():
-                assert train_or_inference_text in ["train", "inference"]
-                is_train = train_or_inference_text == "train"
-                node_acc_device_ids_list = job_spec_combinations["node_acc_device_ids"]
-                for node_acc_device_ids in node_acc_device_ids_list:
-                    node_names, device_ids = node_acc_device_ids
-                    batch_sizes = job_spec_combinations["batch_sizes"]
-                    computation_proportions = job_spec_combinations.get("computation_proportions", None)
-                    memory_proportions = job_spec_combinations.get("memory_proportions", None)
-                    if computation_proportions is None:
-                        computation_proportions = self.options.default_computation_proportions
-                    if memory_proportions is None:
-                        memory_proportions = [self.node_specs[node_names[0]].get_acc_spec(device_ids[0]).acc_mem]
-                    products = list(product(batch_sizes, computation_proportions, memory_proportions))
-                    for product_item in products:
-                        batch_size, computation_proportion, memory_proportion = \
-                            product_item
-                        self.mono_jobs.append(MonoJobConfig(
-                            model_name=model_name,
-                            node_names=node_names,
-                            acc_device_ids=device_ids,
-                            computation_proportion=computation_proportion,
-                            memory_proportion=memory_proportion,
-                            batch_size=batch_size,
-                            is_train=is_train
-                        ))
-        colocate_job_spec_raw = job_specs_raw["colocate"]
+        mono_job_specs_raw = job_specs_raw.get("mono", None)
+
+        def parse_mono():
+            self.mono_jobs = list()
+            for model_name, mono_job_spec_raw in mono_job_specs_raw.items():
+                assert model_name in model_names, f"wrong model name {model_name}"
+                for train_or_inference_text, job_spec_combinations in mono_job_spec_raw.items():
+                    assert train_or_inference_text in ["train", "inference"]
+                    is_train = train_or_inference_text == "train"
+                    node_acc_device_ids_list = job_spec_combinations["node_acc_device_ids"]
+                    for node_acc_device_ids in node_acc_device_ids_list:
+                        node_names, device_ids = node_acc_device_ids
+                        batch_sizes = job_spec_combinations["batch_sizes"]
+                        computation_proportions = job_spec_combinations.get("computation_proportions", None)
+                        memory_proportions = job_spec_combinations.get("memory_proportions", None)
+                        if computation_proportions is None:
+                            computation_proportions = self.options.default_computation_proportions
+                        if memory_proportions is None:
+                            memory_proportions = [self.node_specs[node_names[0]].get_acc_spec(device_ids[0]).acc_mem]
+                        products = list(product(batch_sizes, computation_proportions, memory_proportions))
+                        for product_item in products:
+                            batch_size, computation_proportion, memory_proportion = \
+                                product_item
+                            self.mono_jobs.append(MonoJobConfig(
+                                model_name=model_name,
+                                node_names=node_names,
+                                acc_device_ids=device_ids,
+                                computation_proportion=computation_proportion,
+                                memory_proportion=memory_proportion,
+                                batch_size=batch_size,
+                                is_train=is_train
+                            ))
+
+        if mono_job_specs_raw is not None:
+            parse_mono()
+        colocate_job_spec_raw = job_specs_raw.get("colocate", None)
         self.colocate_jobs = list()
-        for node_name, acc_device_id_to_mono_jobs in colocate_job_spec_raw.items():
-            for acc_device_id, colocate_mono_jobs_list in acc_device_id_to_mono_jobs:
-                acc_spec = self.node_specs[node_name].get_acc_spec(acc_device_id)
-                acc_mem = acc_spec.acc_mem
-                for colocate_mono_jobs in colocate_mono_jobs_list:
-                    total_products = list()
-                    for i, mono_job in enumerate(colocate_mono_jobs):
-                        batch_sizes = mono_job["batch_sizes"]
-                        computation_proportions = mono_job["computation_proportions"]
-                        memory_proportions = mono_job["memory_proportions"]
-                        products = list(product([i], batch_sizes, computation_proportions, memory_proportions))
-                        total_products.append(products)
-                    combined_total_products = product(total_products)
-                    for combined_total_product in combined_total_products:
-                        total_computation_proportion = 0
-                        total_memory_proportion = 0
-                        for mono_job_product in combined_total_product:
-                            _, _, computation_proportion, memory_proportion = mono_job_product
-                            total_computation_proportion += computation_proportion
-                            total_memory_proportion += memory_proportion
-                        if total_computation_proportion > 100 or total_memory_proportion > acc_mem:
-                            # skip since over subscript computation or memory
-                            continue
-                        generated_colocate_mono_jobs = list()
-                        for mono_job_product in combined_total_product:
-                            job_idx, batch_size, computation_proportion, memory_proportion = mono_job_product
-                            mono_job = colocate_mono_jobs[job_idx]
-                            model_name = mono_job["model_name"]
-                            is_train = mono_job["is_train"]
-                            generated_colocate_mono_jobs.append(
-                                MonoJobConfig(
-                                    model_name=model_name,
-                                    node_names=[node_name],
-                                    acc_device_ids=[acc_device_id],
-                                    computation_proportion=computation_proportion,
-                                    memory_proportion=memory_proportion,
-                                    batch_size=batch_size,
-                                    is_train=is_train)
-                            )
-                        self.colocate_jobs.append(ColocateJobConfig(
-                            node_name=node_name,
-                            acc_device_id=acc_device_id,
-                            mono_job_configs=generated_colocate_mono_jobs
-                        ))
+
+        def parse_colocate():
+            for inn_node_name, acc_device_id_to_mono_jobs in colocate_job_spec_raw.items():
+                for inn_acc_device_id, colocate_mono_jobs_list in acc_device_id_to_mono_jobs:
+                    acc_spec = self.node_specs[inn_node_name].get_acc_spec(inn_acc_device_id)
+                    acc_mem = acc_spec.acc_mem
+                    for colocate_mono_jobs in colocate_mono_jobs_list:
+                        total_products = list()
+                        for i, mono_job in enumerate(colocate_mono_jobs):
+                            batch_sizes = mono_job["batch_sizes"]
+                            computation_proportions = mono_job["computation_proportions"]
+                            memory_proportions = mono_job["memory_proportions"]
+                            products = list(product([i], batch_sizes, computation_proportions, memory_proportions))
+                            total_products.append(products)
+                        combined_total_products = product(total_products)
+                        for combined_total_product in combined_total_products:
+                            total_computation_proportion = 0
+                            total_memory_proportion = 0
+                            for mono_job_product in combined_total_product:
+                                _, _, computation_proportion, memory_proportion = mono_job_product
+                                total_computation_proportion += computation_proportion
+                                total_memory_proportion += memory_proportion
+                            if total_computation_proportion > 100 or total_memory_proportion > acc_mem:
+                                # skip since over subscript computation or memory
+                                continue
+                            generated_colocate_mono_jobs = list()
+                            for mono_job_product in combined_total_product:
+                                job_idx, batch_size, computation_proportion, memory_proportion = mono_job_product
+                                mono_job = colocate_mono_jobs[job_idx]
+                                model_name = mono_job["model_name"]
+                                is_train = mono_job["is_train"]
+                                generated_colocate_mono_jobs.append(
+                                    MonoJobConfig(
+                                        model_name=model_name,
+                                        node_names=[inn_node_name],
+                                        acc_device_ids=[inn_acc_device_id],
+                                        computation_proportion=computation_proportion,
+                                        memory_proportion=memory_proportion,
+                                        batch_size=batch_size,
+                                        is_train=is_train)
+                                )
+                            self.colocate_jobs.append(ColocateJobConfig(
+                                node_name=inn_node_name,
+                                acc_device_id=inn_acc_device_id,
+                                mono_job_configs=generated_colocate_mono_jobs
+                            ))
+
+        if colocate_job_spec_raw is not None:
+            parse_colocate()
 
 
 class MonoJobConfig:
@@ -248,10 +258,9 @@ class MonoJobConfig:
         node_acc_reprs = []
         for i, node_name in enumerate(self.node_names):
             node_spec = c.node_specs[node_name]
-            acc_names = []
-            for acc_device_id in self.acc_device_ids:
-                acc_names.append(node_spec.get_acc_spec(acc_device_id).acc_name)
-            acc_repr = "_".join([f"{acc_names[i]}_{did}" for i, did in enumerate(self.acc_device_ids)])
+            acc_device_id = self.acc_device_ids[i]
+            acc_name = node_spec.get_acc_spec(acc_device_id).acc_name
+            acc_repr = f"{acc_name}_{acc_device_id}"
             node_acc_repr = f"{node_name}_{acc_repr}"
             node_acc_reprs.append(node_acc_repr)
         node_acc_reprs_str = "_".join(node_acc_reprs)
@@ -280,7 +289,8 @@ class ColocateJobConfig:
         node_acc_desc = f"{self.node_name}-{node_spec.get_acc_spec(self.acc_device_id).acc_name}-{self.acc_device_id}"
         model_desc_list = list()
         for mono_job_config in self.mono_job_configs:
-            model_desc_list.append(f"{mono_job_config.model_name}_{train_or_inference(mono_job_config.is_train)}_comp_{mono_job_config.computation_proportion}")
+            model_desc_list.append(
+                f"{mono_job_config.model_name}_{train_or_inference(mono_job_config.is_train)}_comp_{mono_job_config.computation_proportion}")
         model_desc_str = "_".join(model_desc_list)
         return f"colocate_{node_acc_desc}_{model_desc_str}"
 
@@ -306,10 +316,11 @@ class Submitter:
             logging.info(f"Created namespace {NAMESPACE}.")
 
     @staticmethod
-    def create_profiling_containers(mono_job_config: MonoJobConfig, uuids: List[str]) -> Dict[str, client.V1Container]:
+    def create_profiling_containers(mono_job_config: MonoJobConfig, uuids: List[str]) -> List[
+        Tuple[str, client.V1Container]]:
         c = Config()
         assert len(mono_job_config.node_names) == len(mono_job_config.acc_device_ids)
-        node_name_to_container = dict()
+        containers: List[Tuple[str, client.V1Container]] = list()
         for i, zipped in enumerate(zip(mono_job_config.node_names, mono_job_config.acc_device_ids)):
             node_name, acc_device_id = zipped
             python_script = [
@@ -343,18 +354,23 @@ class Submitter:
             ]
             python_script_arg = " ".join(python_script)
             container_name = mono_job_config.generate_name(i, uuids[i])
+            computation_proportion = mono_job_config.computation_proportion
+            if computation_proportion == 100:
+                computation_proportion = 99
             container = client.V1Container(
                 image=c.options.image,
                 name=container_name,
                 image_pull_policy=c.options.pull_policy,
+                command=["/bin/bash"],
+                env=[client.V1EnvVar(name="_", value=""), client.V1EnvVar(name="SHLVL", value="")],
                 args=["-c", python_script_arg],
                 resources=client.V1ResourceRequirements(
                     limits={
-                        "tencent.com/vcuda-core": mono_job_config.computation_proportion,
+                        "tencent.com/vcuda-core": computation_proportion,
                         "tencent.com/vcuda-memory": mono_job_config.memory_proportion
                     },
                     requests={
-                        "tencent.com/vcuda-core": mono_job_config.computation_proportion,
+                        "tencent.com/vcuda-core": computation_proportion,
                         "tencent.com/vcuda-memory": mono_job_config.memory_proportion
                     }
                 )
@@ -364,24 +380,24 @@ class Submitter:
                 f"Created container with name: {container.name}, "
                 f"image: {container.image} and args: {container.args}"
             )
-            node_name_to_container[node_name] = container
+            containers.append((node_name, container))
 
-        return node_name_to_container
+        return containers
 
     @staticmethod
     def create_profiling_pod_templates(mono_job_config: MonoJobConfig, uuids: List[str]) -> List[
         client.V1PodTemplateSpec]:
-        node_name_to_container = Submitter.create_profiling_containers(mono_job_config, uuids)
+        containers = Submitter.create_profiling_containers(mono_job_config, uuids)
         pod_templates = list()
-        for i, node_name in enumerate(mono_job_config.node_names):
+        for i, node_name_container in enumerate(containers):
+            node_name, container = node_name_container
             pod_name = mono_job_config.generate_name(i, uuids[i])
             pod_template = client.V1PodTemplateSpec(
                 spec=client.V1PodSpec(
                     node_name=node_name,
                     restart_policy="Never",
                     host_network=True,
-                    host_ipc=True,
-                    containers=[node_name_to_container[node_name]]
+                    containers=[container]
                 ),
                 metadata=client.V1ObjectMeta(
                     name=pod_name,
@@ -432,10 +448,15 @@ class Submitter:
                     batch_api.delete_namespaced_job(j.metadata.name, NAMESPACE)
 
             job_names = list()
+            has_more_than_one = len(jobs) > 0
             for job in jobs:
                 job_names.append(job.metadata.name)
                 job_response = batch_api.create_namespaced_job(NAMESPACE, job)
-                print(f"job {job.metadata.name} created, status={job_response.status}")
+                logging.info(f"job {job.metadata.name} created, status={job_response.status}")
+                if has_more_than_one:
+                    # 腾讯的bug：两个任务不能同时启动，否则无法load cuda库
+                    time.sleep(15)
+                    logging.info("waiting for 15 seconds due to tencent bug...")
             c = Config()
             logging.info(f"submitted jobs: {job_names}")
             maximum_waiting_duration = 3 * c.options.profile_duration_sec
@@ -472,7 +493,7 @@ class Submitter:
             if fail_reason is not None:
                 logging.error(f"failed running jobs: {job_names}")
                 logging.error(f"reason: {fail_reason}")
-                fail_clear()
+                # fail_clear()
             else:
                 logging.info(f"jobs are succeeded: {job_names}")
                 logging.info(f"final execution time: {done_time - start_waiting}")
@@ -527,18 +548,18 @@ def do_test():
 def main():
     parse_args_init_config()
     Submitter.preflight_check()
-    for mono_job_config in Config().mono_jobs:
-        profiling_jobs = Submitter.create_profiling_jobs(mono_job_config)
-        session_id = mono_job_config.get_session_id()
-        logging.info(f"start profiling for mono job session_id: {session_id}, job: {str(mono_job_config)}")
-        Submitter.run_to_terminated(profiling_jobs)
-        logging.info(f"end profiling for mono job session_id: {session_id}, job: {str(mono_job_config)}")
-    for colocate_job_config in Config().colocate_jobs:
-        profiling_jobs = Submitter.create_profiling_jobs(colocate_job_config)
-        session_id = colocate_job_config.get_session_id()
-        logging.info(f"start profiling for colocate job session_id: {session_id}, job: {str(colocate_job_config)}")
-        Submitter.run_to_terminated(profiling_jobs)
-        logging.info(f"end profiling for colocate job session_id: {session_id}, job: {str(colocate_job_config)}")
+
+    def profile_for(job_type, jobs):
+        for job_config in jobs:
+            profiling_jobs = Submitter.create_profiling_jobs(job_config)
+            session_id = job_config.get_session_id()
+            logging.info(f"start profiling for {job_type} job session_id: {session_id}, job: {str(job_config)}")
+            Submitter.run_to_terminated(profiling_jobs)
+            logging.info(f"end profiling for {job_type} job session_id: {session_id}, job: {str(job_config)}")
+            time.sleep(5)
+
+    profile_for("mono", Config().mono_jobs)
+    profile_for("colocate", Config().colocate_jobs)
 
 
 if __name__ == '__main__':

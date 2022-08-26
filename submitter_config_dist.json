@@ -1,0 +1,203 @@
+{
+  "options": {
+    "image": "yzc1114/dl-profiler:v0.1",
+    "pull_policy": "Never",
+    "default_computation_proportions": [
+      10,
+      20,
+      30,
+      40,
+      50,
+      60,
+      70,
+      80,
+      90,
+      100
+    ],
+    "data_collector_receive_url": "http://133.133.135.75:32101/receive",
+    "dist_master_port": 12345,
+    "process_group_backend": "gloo",
+    "profile_duration_sec": 45
+  },
+  "node_specs": {
+    "dell03": {
+      "ip": "133.133.135.73",
+      "acc_specs": {
+        "0": {
+          "name": "Tesla_T4",
+          "memory": 60
+        }
+      }
+    },
+    "dell04": {
+      "ip": "133.133.135.74",
+      "acc_specs": {
+        "0": {
+          "name": "RTX_2080Ti",
+          "memory": 44
+        },
+        "1": {
+          "name": "RTX_2080Ti",
+          "memory": 44
+        }
+      }
+    }
+  },
+  "job_specs": {
+    "mono": {
+      "MobileNet": {
+        "train": {
+          "node_acc_device_ids": [
+            [
+              [
+                "dell04",
+                "dell04"
+              ],
+              [
+                0,
+                1
+              ]
+            ]
+          ],
+          "batch_sizes": [
+            4,
+            8,
+            16,
+            32,
+            64,
+            128
+          ],
+          "computation_proportions": null,
+          "memory_proportions": null
+        }
+      },
+      "ResNet50": {
+        "train": {
+          "node_acc_device_ids": [
+            [
+              [
+                "dell04",
+                "dell04"
+              ],
+              [
+                0,
+                1
+              ]
+            ]
+          ],
+          "batch_sizes": [
+            4,
+            8,
+            16,
+            32,
+            64
+          ],
+          "computation_proportions": null,
+          "memory_proportions": null
+        }
+      },
+      "ResNet18": {
+        "train": {
+          "node_acc_device_ids": [
+            [
+              [
+                "dell04",
+                "dell04"
+              ],
+              [
+                0,
+                1
+              ]
+            ]
+          ],
+          "batch_sizes": [
+            4,
+            8,
+            16,
+            32,
+            64
+          ],
+          "computation_proportions": null,
+          "memory_proportions": null
+        }
+      },
+      "LSTM": {
+        "train": {
+          "node_acc_device_ids": [
+            [
+              [
+                "dell04",
+                "dell04"
+              ],
+              [
+                0,
+                1
+              ]
+            ]
+          ],
+          "batch_sizes": [
+            5,
+            10,
+            20,
+            40,
+            80
+          ],
+          "computation_proportions": null,
+          "memory_proportions": null
+        }
+      },
+      "BertBase": {
+        "train": {
+          "node_acc_device_ids": [
+            [
+              [
+                "dell04",
+                "dell04"
+              ],
+              [
+                0,
+                1
+              ]
+            ]
+          ],
+          "batch_sizes": [
+            4,
+            8,
+            16,
+            32,
+            64,
+            128
+          ],
+          "computation_proportions": null,
+          "memory_proportions": null
+        }
+      },
+      "YoloV5S": {
+        "train": {
+          "node_acc_device_ids": [
+            [
+              [
+                "dell04",
+                "dell04"
+              ],
+              [
+                0,
+                1
+              ]
+            ]
+          ],
+          "batch_sizes": [
+            4,
+            8,
+            16,
+            32,
+            64,
+            128
+          ],
+          "computation_proportions": null,
+          "memory_proportions": null
+        }
+      }
+    }
+  }
+}
