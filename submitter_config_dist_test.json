@@ -29,8 +29,8 @@
         }
       }
     },
-    "dell05": {
-      "ip": "133.133.135.75",
+    "dell04": {
+      "ip": "133.133.135.74",
       "acc_specs": {
         "0": {
           "name": "RTX_2080Ti",
@@ -45,13 +45,13 @@
   },
   "job_specs": {
     "mono": {
-      "ResNet50": {
+      "BertBase": {
         "train": {
           "node_acc_device_ids": [
             [
               [
-                "dell05",
-                "dell05"
+                "dell04",
+                "dell04"
               ],
               [
                 0,
@@ -60,9 +60,9 @@
             ]
           ],
           "batch_sizes": [
-            32
+            8
           ],
-          "computation_proportions": [50],
+          "computation_proportions": [20],
           "memory_proportions": null
         }
       }

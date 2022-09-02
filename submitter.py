@@ -185,8 +185,8 @@ class Config:
 
         def parse_colocate():
             for inn_node_name, acc_device_id_to_mono_jobs in colocate_job_spec_raw.items():
-                for inn_acc_device_id, colocate_mono_jobs_list in acc_device_id_to_mono_jobs:
-                    acc_spec = self.node_specs[inn_node_name].get_acc_spec(inn_acc_device_id)
+                for inn_acc_device_id, colocate_mono_jobs_list in acc_device_id_to_mono_jobs.items():
+                    acc_spec = self.node_specs[inn_node_name].get_acc_spec(int(inn_acc_device_id))
                     acc_mem = acc_spec.acc_mem
                     for colocate_mono_jobs in colocate_mono_jobs_list:
                         total_products = list()
@@ -194,16 +194,27 @@ class Config:
                             batch_sizes = mono_job["batch_sizes"]
                             computation_proportions = mono_job["computation_proportions"]
                             memory_proportions = mono_job["memory_proportions"]
+                            if computation_proportions is None:
+                                c = Config()
+                                computation_proportions = c.options.default_computation_proportions
                             products = list(product([i], batch_sizes, computation_proportions, memory_proportions))
                             total_products.append(products)
-                        combined_total_products = product(total_products)
+                        combined_total_products = list(product(*total_products))
                         for combined_total_product in combined_total_products:
                             total_computation_proportion = 0
                             total_memory_proportion = 0
+                            mono_job_idx_set = set()
+                            duplicate = False
                             for mono_job_product in combined_total_product:
-                                _, _, computation_proportion, memory_proportion = mono_job_product
+                                i, _, computation_proportion, memory_proportion = mono_job_product
+                                if i in mono_job_idx_set:
+                                    duplicate = True
+                                    break
+                                mono_job_idx_set.add(i)
                                 total_computation_proportion += computation_proportion
                                 total_memory_proportion += memory_proportion
+                            if duplicate:
+                                continue
                             if total_computation_proportion > 100 or total_memory_proportion > acc_mem:
                                 # skip since over subscript computation or memory
                                 continue
@@ -252,14 +263,17 @@ class MonoJobConfig:
         self.memory_proportion: int = memory_proportion
         self.batch_size: int = batch_size
         self.is_train: bool = is_train
+        self.specified_session_id: Optional[str] = None
 
     def get_session_id(self) -> str:
+        if self.specified_session_id is not None:
+            return self.specified_session_id
         c = Config()
         node_acc_reprs = []
         for i, node_name in enumerate(self.node_names):
             node_spec = c.node_specs[node_name]
             acc_device_id = self.acc_device_ids[i]
-            acc_name = node_spec.get_acc_spec(acc_device_id).acc_name
+            acc_name = node_spec.get_acc_spec(int(acc_device_id)).acc_name
             acc_repr = f"{acc_name}_{acc_device_id}"
             node_acc_repr = f"{node_name}_{acc_repr}"
             node_acc_reprs.append(node_acc_repr)
@@ -282,15 +296,18 @@ class ColocateJobConfig:
         self.node_name: str = node_name
         self.acc_device_id: int = acc_device_id
         self.mono_job_configs: List['MonoJobConfig'] = mono_job_configs
+        session_id = self.get_session_id()
+        for mono_job_config in self.mono_job_configs:
+            mono_job_config.specified_session_id = session_id
 
     def get_session_id(self) -> str:
         c = Config()
         node_spec = c.node_specs[self.node_name]
-        node_acc_desc = f"{self.node_name}-{node_spec.get_acc_spec(self.acc_device_id).acc_name}-{self.acc_device_id}"
+        node_acc_desc = f"{self.node_name}-{node_spec.get_acc_spec(int(self.acc_device_id)).acc_name}-{self.acc_device_id}"
         model_desc_list = list()
         for mono_job_config in self.mono_job_configs:
             model_desc_list.append(
-                f"{mono_job_config.model_name}_{train_or_inference(mono_job_config.is_train)}_comp_{mono_job_config.computation_proportion}")
+                f"{mono_job_config.model_name}_{train_or_inference(mono_job_config.is_train)}_comp_{mono_job_config.computation_proportion}_bs_{mono_job_config.batch_size}")
         model_desc_str = "_".join(model_desc_list)
         return f"colocate_{node_acc_desc}_{model_desc_str}"
 
@@ -401,7 +418,7 @@ class Submitter:
                 ),
                 metadata=client.V1ObjectMeta(
                     name=pod_name,
-                    labels={"app": pod_name}
+                    labels={"app": "dl-profiler-worker"}
                 ),
             )
             pod_templates.append(pod_template)
@@ -526,7 +543,7 @@ def parse_args_init_config():
 
 def do_test():
     parse_args_init_config()
-    Submitter.preflight_check()
+    # Submitter.preflight_check()
     c = 0
     for mono_job_config in Config().mono_jobs:
         profiling_jobs = Submitter.create_profiling_jobs(mono_job_config)
@@ -563,5 +580,5 @@ def main():
 
 
 if __name__ == '__main__':
-    # do_test()
-    main()
+    do_test()
+    # main()

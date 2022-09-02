@@ -1,4 +1,5 @@
 import time
+from common import time_ns
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from threading import Thread
@@ -22,7 +23,7 @@ class ProfileIterator:
         self.utilization = []
         self.last_iteration_time = 0
         self.wrapped_iterator = self.wrapped_iterator_object.__iter__()
-        self.start_iteration_time = time.time_ns()
+        self.start_iteration_time = time_ns()
         self.monitor_thread: Optional[Thread] = None
 
     def __iter__(self):
@@ -36,13 +37,13 @@ class ProfileIterator:
         self.monitor_thread.start()
 
     def mem_utilization_monitor(self):
-        while time.time_ns() - self.start_iteration_time < self.duration_sec * 1e9:
+        while time_ns() - self.start_iteration_time < self.duration_sec * 1e9:
             self.mem_infos.append(list(torch.cuda.mem_get_info(Config().local_rank)))
             self.utilization.append(torch.cuda.utilization(Config().local_rank))
             time.sleep(Config().mem_utilization_monitor_interval)
 
     def __next__(self):
-        now_ns = time.time_ns()
+        now_ns = time_ns()
         if self.last_iteration_time != 0:
             self.iteration_intervals.append(now_ns - self.last_iteration_time)
         self.last_iteration_time = now_ns

@@ -45,366 +45,6 @@
   },
   "job_specs": {
     "mono": {
-      "MobileNet": {
-        "train": {
-          "node_acc_device_ids": [
-            [
-              [
-                "dell04"
-              ],
-              [
-                0
-              ]
-            ],
-            [
-              [
-                "dell03"
-              ],
-              [
-                0
-              ]
-            ]
-          ],
-          "batch_sizes": [
-            8,
-            16,
-            32,
-            64,
-            128
-          ],
-          "computation_proportions": null,
-          "memory_proportions": null
-        },
-        "inference": {
-          "node_acc_device_ids": [
-            [
-              [
-                "dell04"
-              ],
-              [
-                0
-              ]
-            ],
-            [
-              [
-                "dell03"
-              ],
-              [
-                0
-              ]
-            ]
-          ],
-          "batch_sizes": [
-            4,
-            8,
-            16,
-            32,
-            64,
-            128
-          ],
-          "computation_proportions": null,
-          "memory_proportions": null
-        }
-      },
-      "ResNet50": {
-        "train": {
-          "node_acc_device_ids": [
-            [
-              [
-                "dell04"
-              ],
-              [
-                0
-              ]
-            ],
-            [
-              [
-                "dell03"
-              ],
-              [
-                0
-              ]
-            ]
-          ],
-          "batch_sizes": [
-            8,
-            16,
-            32,
-            64
-          ],
-          "computation_proportions": null,
-          "memory_proportions": null
-        },
-        "inference": {
-          "node_acc_device_ids": [
-            [
-              [
-                "dell04"
-              ],
-              [
-                0
-              ]
-            ],
-            [
-              [
-                "dell03"
-              ],
-              [
-                0
-              ]
-            ]
-          ],
-          "batch_sizes": [
-            4,
-            8,
-            16,
-            32,
-            64
-          ],
-          "computation_proportions": null,
-          "memory_proportions": null
-        }
-      },
-      "ResNet18": {
-        "train": {
-          "node_acc_device_ids": [
-            [
-              [
-                "dell04"
-              ],
-              [
-                0
-              ]
-            ],
-            [
-              [
-                "dell03"
-              ],
-              [
-                0
-              ]
-            ]
-          ],
-          "batch_sizes": [
-            8,
-            16,
-            32,
-            64
-          ],
-          "computation_proportions": null,
-          "memory_proportions": null
-        },
-        "inference": {
-          "node_acc_device_ids": [
-            [
-              [
-                "dell04"
-              ],
-              [
-                0
-              ]
-            ],
-            [
-              [
-                "dell03"
-              ],
-              [
-                0
-              ]
-            ]
-          ],
-          "batch_sizes": [
-            4,
-            8,
-            16,
-            32,
-            64
-          ],
-          "computation_proportions": null,
-          "memory_proportions": null
-        }
-      },
-      "LSTM": {
-        "train": {
-          "node_acc_device_ids": [
-            [
-              [
-                "dell04"
-              ],
-              [
-                0
-              ]
-            ],
-            [
-              [
-                "dell03"
-              ],
-              [
-                0
-              ]
-            ]
-          ],
-          "batch_sizes": [
-            10,
-            20,
-            40,
-            80
-          ],
-          "computation_proportions": null,
-          "memory_proportions": null
-        },
-        "inference": {
-          "node_acc_device_ids": [
-            [
-              [
-                "dell04"
-              ],
-              [
-                0
-              ]
-            ],
-            [
-              [
-                "dell03"
-              ],
-              [
-                0
-              ]
-            ]
-          ],
-          "batch_sizes": [
-            5,
-            10,
-            20,
-            40,
-            80
-          ],
-          "computation_proportions": null,
-          "memory_proportions": null
-        }
-      },
-      "BertBase": {
-        "train": {
-          "node_acc_device_ids": [
-            [
-              [
-                "dell04"
-              ],
-              [
-                0
-              ]
-            ],
-            [
-              [
-                "dell03"
-              ],
-              [
-                0
-              ]
-            ]
-          ],
-          "batch_sizes": [
-            8,
-            16,
-            32,
-            64,
-            128
-          ],
-          "computation_proportions": null,
-          "memory_proportions": null
-        },
-        "inference": {
-          "node_acc_device_ids": [
-            [
-              [
-                "dell04"
-              ],
-              [
-                0
-              ]
-            ],
-            [
-              [
-                "dell03"
-              ],
-              [
-                0
-              ]
-            ]
-          ],
-          "batch_sizes": [
-            4,
-            8,
-            16,
-            32,
-            64,
-            128
-          ],
-          "computation_proportions": null,
-          "memory_proportions": null
-        }
-      },
-      "YoloV5S": {
-        "train": {
-          "node_acc_device_ids": [
-            [
-              [
-                "dell04"
-              ],
-              [
-                0
-              ]
-            ],
-            [
-              [
-                "dell03"
-              ],
-              [
-                0
-              ]
-            ]
-          ],
-          "batch_sizes": [
-            8,
-            16,
-            32,
-            64,
-            128
-          ],
-          "computation_proportions": null,
-          "memory_proportions": null
-        },
-        "inference": {
-          "node_acc_device_ids": [
-            [
-              [
-                "dell04"
-              ],
-              [
-                0
-              ]
-            ],
-            [
-              [
-                "dell03"
-              ],
-              [
-                0
-              ]
-            ]
-          ],
-          "batch_sizes": [
-            4,
-            8,
-            16,
-            32,
-            64,
-            128
-          ],
-          "computation_proportions": null,
-          "memory_proportions": null
-        }
-      }
     },
     "colocate": {
       "dell03": {
@@ -416,24 +56,20 @@
               "batch_sizes": [
                 32
               ],
-              "computation_proportions": [
-                50
-              ],
+              "computation_proportions": null,
               "memory_proportions": [
-                44
+                36
               ]
             },
             {
-              "model_name": "MobileNet",
-              "is_train": false,
+              "model_name": "LSTM",
+              "is_train": true,
               "batch_sizes": [
                 32
               ],
-              "computation_proportions": [
-                50
-              ],
+              "computation_proportions": null,
               "memory_proportions": [
-                16
+                8
               ]
             }
           ],
@@ -444,24 +80,44 @@
               "batch_sizes": [
                 32
               ],
-              "computation_proportions": [
-                50
-              ],
+              "computation_proportions": null,
               "memory_proportions": [
-                16
+                28
               ]
             },
             {
-              "model_name": "MobileNet",
-              "is_train": false,
+              "model_name": "ResNet18",
+              "is_train": true,
               "batch_sizes": [
                 32
               ],
-              "computation_proportions": [
-                50
-              ],
+              "computation_proportions": null,
               "memory_proportions": [
                 16
+              ]
+            }
+          ],
+          [
+            {
+              "model_name": "BertBase",
+              "is_train": true,
+              "batch_sizes": [
+                32
+              ],
+              "computation_proportions": null,
+              "memory_proportions": [
+                20
+              ]
+            },
+            {
+              "model_name": "YoloV5S",
+              "is_train": true,
+              "batch_sizes": [
+                32
+              ],
+              "computation_proportions": null,
+              "memory_proportions": [
+                20
               ]
             }
           ]
