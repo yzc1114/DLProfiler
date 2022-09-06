@@ -15,7 +15,7 @@
       100
     ],
     "data_collector_receive_url": "http://133.133.135.75:32101/receive",
-    "dist_master_port": 12345,
+    "dist_master_port": 39920,
     "process_group_backend": "gloo",
     "profile_duration_sec": 45
   },
@@ -41,17 +41,14 @@
           "node_acc_device_ids": [
             [
               [
-                "dell04",
                 "dell04"
               ],
               [
-                0,
-                1
+                0
               ]
             ]
           ],
           "batch_sizes": [
-            4,
             8,
             16,
             32,

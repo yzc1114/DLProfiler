@@ -341,7 +341,7 @@ class Submitter:
         for i, zipped in enumerate(zip(mono_job_config.node_names, mono_job_config.acc_device_ids)):
             node_name, acc_device_id = zipped
             python_script = [
-                "python",
+                "env && python",
                 "profiler.py",
                 "--session-id",
                 mono_job_config.get_session_id(),
@@ -379,7 +379,11 @@ class Submitter:
                 name=container_name,
                 image_pull_policy=c.options.pull_policy,
                 command=["/bin/bash"],
-                env=[client.V1EnvVar(name="_", value=""), client.V1EnvVar(name="SHLVL", value="")],
+                env=[
+                    client.V1EnvVar(name="GLOO_SOCKET_IFNAME", value_from=client.V1EnvVarSource(
+                        config_map_key_ref=client.V1ConfigMapKeySelector(name="ifname-env-file", key=node_name)
+                    ))
+                ],
                 args=["-c", python_script_arg],
                 resources=client.V1ResourceRequirements(
                     limits={
@@ -472,8 +476,9 @@ class Submitter:
                 logging.info(f"job {job.metadata.name} created, status={job_response.status}")
                 if has_more_than_one:
                     # 腾讯的bug：两个任务不能同时启动，否则无法load cuda库
-                    time.sleep(15)
-                    logging.info("waiting for 15 seconds due to tencent bug...")
+                    waiting_for = 10
+                    time.sleep(waiting_for)
+                    logging.info(f"waiting for {waiting_for} seconds due to tencent bug...")
             c = Config()
             logging.info(f"submitted jobs: {job_names}")
             maximum_waiting_duration = 3 * c.options.profile_duration_sec
@@ -580,5 +585,5 @@ def main():
 
 
 if __name__ == '__main__':
-    do_test()
-    # main()
+    # do_test()
+    main()

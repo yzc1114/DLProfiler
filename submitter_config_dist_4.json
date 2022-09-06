@@ -32,32 +32,45 @@
           "memory": 44
         }
       }
+    },
+    "dell05": {
+      "ip": "133.133.135.75",
+      "acc_specs": {
+        "0": {
+          "name": "RTX_2080Ti",
+          "memory": 44
+        },
+        "1": {
+          "name": "RTX_2080Ti",
+          "memory": 44
+        }
+      }
     }
   },
   "job_specs": {
     "mono": {
-      "InceptionV3": {
+      "VGG16": {
         "train": {
           "node_acc_device_ids": [
             [
               [
                 "dell04",
-                "dell04"
+                "dell04",
+                "dell05",
+                "dell05"
               ],
               [
+                0,
+                1,
                 0,
                 1
               ]
             ]
           ],
           "batch_sizes": [
-            4,
-            8,
-            16,
-            32,
-            64
+            16
           ],
-          "computation_proportions": null,
+          "computation_proportions": [50],
           "memory_proportions": null
         }
       }

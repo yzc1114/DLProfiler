@@ -11,6 +11,8 @@ class ModelDescriptions(Enum):
     # model = torch.hub.load("pytorch/vision:v0.10.0", "vgg16", pretrained=False)
     VGG_16 = ModelDescriptionNT(name="VGG16")
 
+    Inception_V3 = ModelDescriptionNT(name="InceptionV3")
+
     # model = torch.hub.load("pytorch/vision:v0.10.0", "resnet18", pretrained=False)
     RESNET_18 = ModelDescriptionNT(name="ResNet18")
 

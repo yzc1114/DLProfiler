@@ -2,14 +2,16 @@ from model_factory.BERT.profiler import BERTInference, BERTTrain
 from model_factory.LSTM.profiler import LSTMTrain, LSTMInference
 from model_factory.Mobile.profiler import MobileNetV2Inference, MobileNetV2Train
 from model_factory.ResNet.profiler import ResNet50Inference, ResNet50Train, ResNet18Inference, ResNet18Train
-from model_factory.VGG.profiler import VGG16Inference, VGG16Train
+from model_factory.VGG.profiler import VGG16Inference, VGG16Train, VGG19Train, VGG19Inference
 from model_factory.Yolo.profiler import YoloV5sInference, YoloV5sTrain
+from model_factory.Inception.profiler import InceptionV3Train, InceptionV3Inference
 from objects import ModelDescriptions
 
 DDP_train_profilers = dict(
     {
         ModelDescriptions.YOLO_V5S.value.name: YoloV5sTrain,
         ModelDescriptions.VGG_16.value.name: VGG16Train,
+        ModelDescriptions.Inception_V3.value.name: InceptionV3Train,
         ModelDescriptions.RESNET_18.value.name: ResNet18Train,
         ModelDescriptions.RESNET_50.value.name: ResNet50Train,
         ModelDescriptions.LSTM.value.name: LSTMTrain,
@@ -22,6 +24,7 @@ inference_profilers = dict(
     {
         ModelDescriptions.YOLO_V5S.value.name: YoloV5sInference,
         ModelDescriptions.VGG_16.value.name: VGG16Inference,
+        ModelDescriptions.Inception_V3.value.name: InceptionV3Inference,
         ModelDescriptions.RESNET_18.value.name: ResNet18Inference,
         ModelDescriptions.RESNET_50.value.name: ResNet50Inference,
         ModelDescriptions.LSTM.value.name: LSTMInference,

@@ -25,6 +25,17 @@ class VGG16Inference(Profileable):
         vgg16_model = load_vgg16()
         return common_inference_template(vgg16_model, batch_size, duration_sec, vgg_rand_input)
 
+class VGG19Train(Profileable):
+    def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
+        vgg16_model = load_vgg16()
+        return common_train_template(vgg16_model, batch_size, duration_sec, vgg_rand_input, vgg_rand_output)
+
+
+class VGG19Inference(Profileable):
+    def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
+        vgg16_model = load_vgg16()
+        return common_inference_template(vgg16_model, batch_size, duration_sec, vgg_rand_input)
+
 
 def do_test():
     from common import process_group
