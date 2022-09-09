@@ -26,6 +26,8 @@ class ModelDescriptions(Enum):
 
     LSTM = ModelDescriptionNT(name="LSTM")
 
+    EfficientNet = ModelDescriptionNT(name="EfficientNet")
+
 
 def do_test():
     pass

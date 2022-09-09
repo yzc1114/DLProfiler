@@ -32,46 +32,183 @@
           "memory": 44
         }
       }
-    },
-    "dell05": {
-      "ip": "133.133.135.75",
-      "acc_specs": {
-        "0": {
-          "name": "RTX_2080Ti",
-          "memory": 44
-        },
-        "1": {
-          "name": "RTX_2080Ti",
-          "memory": 44
-        }
-      }
     }
   },
   "job_specs": {
     "mono": {
-      "VGG16": {
+      "MobileNet": {
         "train": {
           "node_acc_device_ids": [
             [
               [
                 "dell04",
                 "dell04",
-                "dell05",
-                "dell05"
+                "dell04",
+                "dell04"
               ],
               [
                 0,
-                1,
                 0,
+                1,
                 1
               ]
             ]
           ],
           "batch_sizes": [
-            16
+            4, 8, 16, 32
           ],
-          "computation_proportions": [50],
-          "memory_proportions": null
+          "computation_proportions": [10, 15, 20, 25, 30, 35, 40, 45, 50],
+          "memory_proportions": [22]
+        }
+      },
+      "ResNet50": {
+        "train": {
+          "node_acc_device_ids": [
+            [
+              [
+                "dell04",
+                "dell04",
+                "dell04",
+                "dell04"
+              ],
+              [
+                0,
+                0,
+                1,
+                1
+              ]
+            ]
+          ],
+          "batch_sizes": [
+            4, 8, 16
+          ],
+          "computation_proportions": [10, 15, 20, 25, 30, 35, 40, 45, 50],
+          "memory_proportions": [22]
+        }
+      },
+      "ResNet18": {
+        "train": {
+          "node_acc_device_ids": [
+            [
+              [
+                "dell04",
+                "dell04",
+                "dell04",
+                "dell04"
+              ],
+              [
+                0,
+                0,
+                1,
+                1
+              ]
+            ]
+          ],
+          "batch_sizes": [
+            4, 8, 16, 32
+          ],
+          "computation_proportions": [10, 15, 20, 25, 30, 35, 40, 45, 50],
+          "memory_proportions": [22]
+        }
+      },
+      "LSTM": {
+        "train": {
+          "node_acc_device_ids": [
+            [
+              [
+                "dell04",
+                "dell04",
+                "dell04",
+                "dell04"
+              ],
+              [
+                0,
+                0,
+                1,
+                1
+              ]
+            ]
+          ],
+          "batch_sizes": [
+            5, 10, 20, 40
+          ],
+          "computation_proportions": [10, 15, 20, 25, 30, 35, 40, 45, 50],
+          "memory_proportions": [22]
+        }
+      },
+      "BertBase": {
+        "train": {
+          "node_acc_device_ids": [
+            [
+              [
+                "dell04",
+                "dell04",
+                "dell04",
+                "dell04"
+              ],
+              [
+                0,
+                0,
+                1,
+                1
+              ]
+            ]
+          ],
+          "batch_sizes": [
+            8, 16, 32
+          ],
+          "computation_proportions": [10, 15, 20, 25, 30, 35, 40, 45, 50],
+          "memory_proportions": [22]
+        }
+      },
+      "YoloV5S": {
+        "train": {
+          "node_acc_device_ids": [
+            [
+              [
+                "dell04",
+                "dell04",
+                "dell04",
+                "dell04"
+              ],
+              [
+                0,
+                0,
+                1,
+                1
+              ]
+            ]
+          ],
+          "batch_sizes": [
+            4, 8, 16, 32
+          ],
+          "computation_proportions": [10, 15, 20, 25, 30, 35, 40, 45, 50],
+          "memory_proportions": [22]
+        }
+      },
+      "InceptionV3": {
+        "train": {
+          "node_acc_device_ids": [
+            [
+              [
+                "dell04",
+                "dell04",
+                "dell04",
+                "dell04"
+              ],
+              [
+                0,
+                0,
+                1,
+                1
+              ]
+            ]
+          ],
+          "batch_sizes": [
+            4, 8, 16
+          ],
+          "computation_proportions": [10, 15, 20, 25, 30, 35, 40, 45, 50],
+          "memory_proportions": [22]
         }
       }
     }

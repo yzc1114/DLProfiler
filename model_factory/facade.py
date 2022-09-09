@@ -5,6 +5,7 @@ from model_factory.ResNet.profiler import ResNet50Inference, ResNet50Train, ResN
 from model_factory.VGG.profiler import VGG16Inference, VGG16Train, VGG19Train, VGG19Inference
 from model_factory.Yolo.profiler import YoloV5sInference, YoloV5sTrain
 from model_factory.Inception.profiler import InceptionV3Train, InceptionV3Inference
+from model_factory.EfficientNet.profiler import EfficientNetTrain, EfficientNetInference
 from objects import ModelDescriptions
 
 DDP_train_profilers = dict(
@@ -17,6 +18,7 @@ DDP_train_profilers = dict(
         ModelDescriptions.LSTM.value.name: LSTMTrain,
         ModelDescriptions.BERT_BASE.value.name: BERTTrain,
         ModelDescriptions.MOBILE_NET.value.name: MobileNetV2Train,
+        ModelDescriptions.EfficientNet.value.name: EfficientNetTrain,
     }
 )
 
@@ -30,6 +32,7 @@ inference_profilers = dict(
         ModelDescriptions.LSTM.value.name: LSTMInference,
         ModelDescriptions.BERT_BASE.value.name: BERTInference,
         ModelDescriptions.MOBILE_NET.value.name: MobileNetV2Inference,
+        ModelDescriptions.EfficientNet.value.name: EfficientNetInference,
     }
 )
 

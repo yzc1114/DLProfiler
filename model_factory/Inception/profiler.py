@@ -40,14 +40,14 @@ def inception_train_template(model: torch.nn.Module, batch_size: int, duration_s
 
 class InceptionV3Train(Profileable):
     def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
-        vgg16_model = load_inception_v3()
-        return inception_train_template(vgg16_model, batch_size, duration_sec, inception_v3_rand_input, inception_v3_rand_output)
+        model = load_inception_v3()
+        return inception_train_template(model, batch_size, duration_sec, inception_v3_rand_input, inception_v3_rand_output)
 
 
 class InceptionV3Inference(Profileable):
     def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
-        vgg16_model = load_inception_v3()
-        return common_inference_template(vgg16_model, batch_size, duration_sec, inception_v3_rand_input)
+        model = load_inception_v3()
+        return common_inference_template(model, batch_size, duration_sec, inception_v3_rand_input)
 
 
 def do_test():
