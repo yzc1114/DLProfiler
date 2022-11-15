@@ -20,15 +20,6 @@
     "profile_duration_sec": 45
   },
   "node_specs": {
-    "dell03": {
-      "ip": "133.133.135.73",
-      "acc_specs": {
-        "0": {
-          "name": "Tesla_T4",
-          "memory": 60
-        }
-      }
-    },
     "dell04": {
       "ip": "133.133.135.74",
       "acc_specs": {
@@ -45,7 +36,7 @@
   },
   "job_specs": {
     "mono": {
-      "BertBase": {
+      "YoloV5S": {
         "train": {
           "node_acc_device_ids": [
             [
@@ -60,10 +51,10 @@
             ]
           ],
           "batch_sizes": [
-            8
+            128
           ],
-          "computation_proportions": [20],
-          "memory_proportions": null
+          "computation_proportions": [5, 15, 25, 35, 45, 55, 65, 75, 85, 95],
+          "memory_proportions": [44]
         }
       }
     }

@@ -16,6 +16,7 @@ class ProfileIterator:
         self.wrapped_iterator_object = wrapped_iterator_object
         self.duration_sec: int = duration_sec
         self.__init_profiling_variables()
+        self.extra_dict = dict()
 
     def __init_profiling_variables(self):
         self.iteration_intervals = []
@@ -38,8 +39,8 @@ class ProfileIterator:
 
     def mem_utilization_monitor(self):
         while time_ns() - self.start_iteration_time < self.duration_sec * 1e9:
-            self.mem_infos.append(list(torch.cuda.mem_get_info(Config().local_rank)))
-            self.utilization.append(torch.cuda.utilization(Config().local_rank))
+            self.mem_infos.append(list(torch.cuda.mem_get_info(Config().device)))
+            self.utilization.append(torch.cuda.utilization(Config().device))
             time.sleep(Config().mem_utilization_monitor_interval)
 
     def __next__(self):
@@ -59,7 +60,8 @@ class ProfileIterator:
             "iteration_intervals_avg": np.mean(self.iteration_intervals) if len(self.iteration_intervals) > 0 else 0,
             "total_time_ns": self.last_iteration_time - self.start_iteration_time,
             "mem_infos": self.mem_infos,
-            "utilization": self.utilization
+            "utilization": self.utilization,
+            "extra_dict": self.extra_dict
         }
 
 

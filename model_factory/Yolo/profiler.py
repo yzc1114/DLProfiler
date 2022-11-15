@@ -6,21 +6,21 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 
 from common import Config
 from model_factory.Yolo.models import load_yolov5s
-from model_factory.hub_common_profile import common_inference_template
+from model_factory.hub_common_profile import common_inference_template, common_checkpoint_template
 from profiler_utils import Profileable, ProfileIterator
 
 
 def yolov5s_rand_input(batch_size: int):
-    return torch.rand([batch_size, 3, 256, 256], device=Config().local_rank)
+    return torch.rand([batch_size, 3, 256, 256], device=Config().device)
 
 
 def yolov5s_rand_output():
-    return torch.rand((1,), device=Config().local_rank)
+    return torch.rand((1,), device=Config().device)
 
 
 def yolov5_train_template(model: torch.nn.Module, batch_size: int, duration_sec: int,
                           rand_input: Callable[[int], torch.Tensor], rand_output: Callable[[], torch.Tensor]):
-    model = model.to(Config().local_rank)
+    model = model.to(Config().device)
     model = DDP(model)
     model.train()
     iterator = ProfileIterator(itertools.count(0), duration_sec)
@@ -55,16 +55,24 @@ class YoloV5sInference(Profileable):
         return common_inference_template(model, batch_size, duration_sec, yolov5s_rand_input)
 
 
+
+class YoloV5sCheckpoint(Profileable):
+    def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
+        model = load_yolov5s()
+        yolov5_train_template(model, batch_size, duration_sec, yolov5s_rand_input, yolov5s_rand_output)
+        return common_checkpoint_template(model, duration_sec)
+
+
 def do_test():
     from common import process_group
-    process_group.setup(0, 1)
-    profile = YoloV5sTrain()
+    # process_group.setup(0, 1)
+    profile = YoloV5sCheckpoint()
     iterator = profile.profile(batch_size=64, duration_sec=10)
     print(iterator.to_dict())
-    torch.cuda.empty_cache()
-    profile = YoloV5sInference()
-    iterator = profile.profile(batch_size=64, duration_sec=10)
-    print(iterator.to_dict())
+    # torch.cuda.empty_cache()
+    # profile = YoloV5sInference()
+    # iterator = profile.profile(batch_size=64, duration_sec=10)
+    # print(iterator.to_dict())
 
 
 if __name__ == '__main__':

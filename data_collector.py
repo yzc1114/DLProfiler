@@ -17,12 +17,13 @@ class ProfiledDataModel(BaseModel):
     model_name: str
     batch_size: int
     duration_sec: int
-    is_train: bool
+    mode: str
     is_DDP: bool
     process_group_backend: str
     world_size: int
     rank: int
     local_rank: int
+    device_type: str
     master_addr: str
     master_port: int
     iteration_count: int
@@ -32,6 +33,7 @@ class ProfiledDataModel(BaseModel):
     mem_infos: List[List[int]]
     utilization: List[int]
     computation_proportion: int
+    extra_dict: Dict
 
 
 @app.post("/receive/{session_id}/{rank}")
@@ -39,7 +41,7 @@ def receive(*,
             session_id: str = Path(..., title="session id"),
             rank: int = Path(..., title="rank"),
             profiled_data_model: ProfiledDataModel):
-    filename = datetime.datetime.now().strftime(f"{session_id}_rank_{rank}_model_{'train' if profiled_data_model.is_train else 'inference'}_{profiled_data_model.model_name}_batch_{profiled_data_model.batch_size}_comp_{profiled_data_model.computation_proportion}_%Y-%m-%d-%H-%M-%S.json")
+    filename = datetime.datetime.now().strftime(f"{session_id}_rank_{rank}_model_{profiled_data_model.mode}_{profiled_data_model.model_name}_batch_{profiled_data_model.batch_size}_comp_{profiled_data_model.computation_proportion}_%Y-%m-%d-%H-%M-%S.json")
     session_dir = os.path.join(args.data_dir_path, session_id)
     if not os.path.exists(session_dir):
         os.mkdir(session_dir)

@@ -2,18 +2,26 @@ import torch
 
 from common import Config
 from model_factory.LSTM.word_language_model import main as LSTMMain
+from model_factory.hub_common_profile import common_checkpoint_template
 from profiler_utils import Profileable, ProfileIterator
 
 
 class LSTMTrain(Profileable):
     def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
-        return LSTMMain.do_profile(batch_size, duration_sec, device=Config().local_rank, is_train=True)
+        _, iterator = LSTMMain.do_profile(batch_size, duration_sec, device=Config().device, is_train=True)
+        return iterator
 
 
 class LSTMInference(Profileable):
     def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
-        return LSTMMain.do_profile(batch_size, duration_sec, device=Config().local_rank, is_train=False)
+        _, iterator = LSTMMain.do_profile(batch_size, duration_sec, device=Config().device, is_train=False)
+        return iterator
 
+
+class LSTMCheckpoint(Profileable):
+    def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
+        model, _ = LSTMMain.do_profile(batch_size, 5, device=Config().device, is_train=True)
+        return common_checkpoint_template(model, duration_sec)
 
 def do_test():
     from common import process_group

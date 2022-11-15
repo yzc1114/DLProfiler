@@ -2,16 +2,16 @@ import torch
 
 from common import Config
 from model_factory.ResNet.models import load_resnet50, load_resnet18
-from model_factory.hub_common_profile import common_train_template, common_inference_template
+from model_factory.hub_common_profile import common_train_template, common_inference_template, common_checkpoint_template
 from profiler_utils import Profileable, ProfileIterator
 
 
 def resnet_rand_input(batch_size: int):
-    return torch.rand((batch_size, 3, 256, 256), device=Config().local_rank)
+    return torch.rand((batch_size, 3, 256, 256), device=Config().device)
 
 
 def resnet_rand_output():
-    return torch.rand((1,), device=Config().local_rank)
+    return torch.rand((1,), device=Config().device)
 
 
 class ResNet18Train(Profileable):
@@ -26,6 +26,13 @@ class ResNet18Inference(Profileable):
         return common_inference_template(resnet18_model, batch_size, duration_sec, resnet_rand_input)
 
 
+class ResNet18Checkpoint(Profileable):
+    def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
+        resnet18_model = load_resnet18()
+        common_train_template(resnet18_model, batch_size, 5, resnet_rand_input, resnet_rand_output)
+        return common_checkpoint_template(resnet18_model, duration_sec)
+
+
 class ResNet50Train(Profileable):
     def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
         resnet50_model = load_resnet50()
@@ -37,6 +44,12 @@ class ResNet50Inference(Profileable):
         resnet50_model = load_resnet50()
         return common_inference_template(resnet50_model, batch_size, duration_sec, resnet_rand_input)
 
+
+class ResNet50Checkpoint(Profileable):
+    def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
+        model = load_resnet50()
+        common_train_template(model, batch_size, 5, resnet_rand_input, resnet_rand_output)
+        return common_checkpoint_template(model, duration_sec)
 
 def do_test():
     from common import process_group

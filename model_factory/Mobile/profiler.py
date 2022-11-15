@@ -2,29 +2,35 @@ import torch
 
 from common import Config
 from model_factory.Mobile.models import load_mobile_net_v2
-from model_factory.hub_common_profile import common_train_template, common_inference_template
+from model_factory.hub_common_profile import common_train_template, common_inference_template, common_checkpoint_template
 from profiler_utils import Profileable, ProfileIterator
 
 
-def vgg_rand_input(batch_size: int):
-    return torch.rand((batch_size, 3, 224, 224), device=Config().local_rank)
+def mobile_rand_input(batch_size: int):
+    return torch.rand((batch_size, 3, 224, 224), device=Config().device)
 
 
-def vgg_rand_output():
-    return torch.rand((1,), device=Config().local_rank)
+def mobile_rand_output():
+    return torch.rand((1,), device=Config().device)
 
 
 class MobileNetV2Train(Profileable):
     def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
         model = load_mobile_net_v2()
-        return common_train_template(model, batch_size, duration_sec, vgg_rand_input, vgg_rand_output)
+        return common_train_template(model, batch_size, duration_sec, mobile_rand_input, mobile_rand_output)
 
 
 class MobileNetV2Inference(Profileable):
     def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
         model = load_mobile_net_v2()
-        return common_inference_template(model, batch_size, duration_sec, vgg_rand_input)
+        return common_inference_template(model, batch_size, duration_sec, mobile_rand_input)
 
+
+class MobileNetV2Checkpoint(Profileable):
+    def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
+        model = load_mobile_net_v2()
+        common_train_template(model, batch_size, 5, mobile_rand_input, mobile_rand_output)
+        return common_checkpoint_template(model, duration_sec)
 
 def do_test():
     from common import process_group

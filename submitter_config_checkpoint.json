@@ -3,31 +3,12 @@
     "image": "yzc1114/dl-profiler:v0.1",
     "pull_policy": "Never",
     "default_computation_proportions": [
-      5,
-      10,
-      15,
-      20,
-      25,
-      30,
-      35,
-      40,
-      45,
-      50,
-      55,
-      60,
-      65,
-      70,
-      75,
-      80,
-      85,
-      90,
-      95,
       100
     ],
     "data_collector_receive_url": "http://133.133.135.75:32101/receive",
     "dist_master_port": 39920,
     "process_group_backend": "gloo",
-    "profile_duration_sec": 45
+    "profile_duration_sec": 20
   },
   "node_specs": {
     "dell04": {
@@ -47,7 +28,7 @@
   "job_specs": {
     "mono": {
       "MobileNet": {
-        "train": {
+        "checkpoint": {
           "node_acc_device_ids": [
             [
               [
@@ -59,19 +40,14 @@
             ]
           ],
           "batch_sizes": [
-            4,
-            8,
-            16,
-            32,
-            64,
-            128
+            64
           ],
           "computation_proportions": null,
           "memory_proportions": null
         }
       },
       "ResNet50": {
-        "train": {
+        "checkpoint": {
           "node_acc_device_ids": [
             [
               [
@@ -83,10 +59,6 @@
             ]
           ],
           "batch_sizes": [
-            4,
-            8,
-            16,
-            32,
             64
           ],
           "computation_proportions": null,
@@ -94,7 +66,7 @@
         }
       },
       "ResNet18": {
-        "train": {
+        "checkpoint": {
           "node_acc_device_ids": [
             [
               [
@@ -106,19 +78,14 @@
             ]
           ],
           "batch_sizes": [
-            4,
-            8,
-            16,
-            32,
-            64,
-            128
+            64
           ],
           "computation_proportions": null,
           "memory_proportions": null
         }
       },
       "LSTM": {
-        "train": {
+        "checkpoint": {
           "node_acc_device_ids": [
             [
               [
@@ -130,19 +97,14 @@
             ]
           ],
           "batch_sizes": [
-            5,
-            10,
-            20,
-            40,
-            80,
-            160
+            80
           ],
           "computation_proportions": null,
           "memory_proportions": null
         }
       },
       "BertBase": {
-        "train": {
+        "checkpoint": {
           "node_acc_device_ids": [
             [
               [
@@ -154,19 +116,14 @@
             ]
           ],
           "batch_sizes": [
-            4,
-            8,
-            16,
-            32,
-            64,
-            128
+            64
           ],
           "computation_proportions": null,
           "memory_proportions": null
         }
       },
       "YoloV5S": {
-        "train": {
+        "checkpoint": {
           "node_acc_device_ids": [
             [
               [
@@ -178,19 +135,14 @@
             ]
           ],
           "batch_sizes": [
-            4,
-            8,
-            16,
-            32,
-            64,
-            128
+            64
           ],
           "computation_proportions": null,
           "memory_proportions": null
         }
       },
       "EfficientNet": {
-        "train": {
+        "checkpoint": {
           "node_acc_device_ids": [
             [
               [
@@ -202,19 +154,14 @@
             ]
           ],
           "batch_sizes": [
-            4,
-            8,
-            16,
-            32,
-            64,
-            128
+            64
           ],
           "computation_proportions": null,
           "memory_proportions": null
         }
       },
       "InceptionV3": {
-        "train": {
+        "checkpoint": {
           "node_acc_device_ids": [
             [
               [
@@ -226,10 +173,6 @@
             ]
           ],
           "batch_sizes": [
-            4,
-            8,
-            16,
-            32,
             64
           ],
           "computation_proportions": null,

@@ -6,6 +6,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from transformers import AutoTokenizer
 
 from common import Config
+from model_factory.hub_common_profile import common_checkpoint_template
 from model_factory.BERT.models import load_bert_base
 from profiler_utils import Profileable, ProfileIterator
 
@@ -26,16 +27,16 @@ def bert_rand_input(batch_size: int, tokenizer=None):
     fix_sentence_input = "Some fixed sentence input for relative stable execution of each iteration."
     fix_sentence_input *= 5
     inputs = tokenizer([fix_sentence_input] * batch_size, return_tensors="pt")
-    inputs.to(Config().local_rank)
+    inputs.to(Config().device)
     return inputs
 
 
 def bert_rand_output(batch_size: int):
-    return torch.tensor([1] * batch_size, device=Config().local_rank)
+    return torch.tensor([1] * batch_size, device=Config().device)
 
 
 def bert_train_template(model: torch.nn.Module, batch_size: int, duration_sec: int, rand_input, rand_output):
-    model = model.to(Config().local_rank)
+    model = model.to(Config().device)
     model = DDP(model)
     model.train()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
@@ -52,7 +53,7 @@ def bert_train_template(model: torch.nn.Module, batch_size: int, duration_sec: i
 
 def bert_inference_template(model: torch.nn.Module, batch_size: int, duration_sec: int, rand_input):
     with torch.no_grad():
-        model.to(Config().local_rank)
+        model.to(Config().device)
         model.train(False)
         iterator = ProfileIterator(itertools.count(0), duration_sec)
         for _ in iterator:
@@ -71,6 +72,14 @@ class BERTInference(Profileable):
     def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
         bert_model = load_bert_base()
         return bert_inference_template(bert_model, batch_size, duration_sec, bert_rand_input)
+
+
+class BERTCheckpoint(Profileable):
+    def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
+        model = load_bert_base()
+        bert_train_template(model, batch_size, 5, bert_rand_input, bert_rand_output)
+        return common_checkpoint_template(model, duration_sec)
+
 
 
 def do_test():

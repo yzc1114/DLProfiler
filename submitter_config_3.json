@@ -36,7 +36,7 @@
   },
   "job_specs": {
     "mono": {
-      "InceptionV3": {
+      "EfficientNet": {
         "train": {
           "node_acc_device_ids": [
             [
@@ -52,7 +52,8 @@
             8,
             16,
             32,
-            64
+            64,
+            128
           ],
           "computation_proportions": null,
           "memory_proportions": null

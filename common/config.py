@@ -6,6 +6,7 @@ def init_config(master_addr="localhost",
                 world_size=1,
                 rank=0,
                 local_rank=0,
+                device_type="cpu",
                 process_group_backend="gloo",
                 mem_utilization_monitor_interval:float=0.5):
     c = Config()
@@ -15,6 +16,7 @@ def init_config(master_addr="localhost",
     c.rank = rank
     c.local_rank = local_rank
     c.process_group_backend = process_group_backend
+    c.device_type = device_type
     c.mem_utilization_monitor_interval = mem_utilization_monitor_interval
 
 
@@ -24,7 +26,8 @@ class Config:
                  master_port=39901,
                  world_size=1,
                  rank=0,
-                 local_rank=1,
+                 local_rank=0,
+                 device_type="cpu",
                  process_group_backend="gloo",
                  mem_utilization_monitor_interval: float = 1):
         self.master_addr: str = master_addr
@@ -32,5 +35,7 @@ class Config:
         self.world_size: int = world_size
         self.rank: int = rank
         self.local_rank: int = local_rank
+        self.device_type: str = device_type
         self.process_group_backend: str = process_group_backend
         self.mem_utilization_monitor_interval: float = mem_utilization_monitor_interval
+        self.device: str = "cpu" if device_type == "cpu" else self.local_rank

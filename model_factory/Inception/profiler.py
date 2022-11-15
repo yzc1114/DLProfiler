@@ -1,5 +1,5 @@
 from model_factory.Inception.models import load_inception_v3
-from model_factory.hub_common_profile import common_train_template
+from model_factory.hub_common_profile import common_checkpoint_template
 
 import itertools
 from typing import Callable
@@ -13,16 +13,16 @@ from profiler_utils import Profileable, ProfileIterator
 
 
 def inception_v3_rand_input(batch_size: int):
-    return torch.rand((batch_size, 3, 299, 299), device=Config().local_rank)
+    return torch.rand((batch_size, 3, 299, 299), device=Config().device)
 
 
 def inception_v3_rand_output():
-    return torch.rand((1,), device=Config().local_rank)
+    return torch.rand((1,), device=Config().device)
 
 
 def inception_train_template(model: torch.nn.Module, batch_size: int, duration_sec: int,
                           rand_input: Callable[[int], torch.Tensor], rand_output: Callable[[], torch.Tensor]):
-    model = model.to(Config().local_rank)
+    model = model.to(Config().device)
     model = DDP(model)
     model.train()
     iterator = ProfileIterator(itertools.count(0), duration_sec)
@@ -48,6 +48,13 @@ class InceptionV3Inference(Profileable):
     def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
         model = load_inception_v3()
         return common_inference_template(model, batch_size, duration_sec, inception_v3_rand_input)
+
+
+class InceptionV3Checkpoint(Profileable):
+    def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
+        model = load_inception_v3()
+        inception_train_template(model, batch_size, 5, inception_v3_rand_input, inception_v3_rand_output)
+        return common_checkpoint_template(model, duration_sec)
 
 
 def do_test():

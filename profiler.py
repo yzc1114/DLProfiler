@@ -41,9 +41,7 @@ def main():
                         type=int,
                         required=True,
                         help='the batch size of the model')
-    parser.add_argument('--train', action='store_true')
-    parser.add_argument('--inference', dest='train', action='store_false')
-    parser.set_defaults(train=True)
+    parser.add_argument('--mode', choices=["train", "inference", "checkpoint"], type=str, required=True)
     parser.add_argument('--dist-data-parallel',
                         action="store_true",
                         help='use distributed data parallel to train, default is true')
@@ -51,6 +49,11 @@ def main():
                         dest="dist_data_parallel",
                         action="store_true",
                         help='use distributed model parallel to train, default is false')
+    parser.add_argument('--device_type',
+                        type=str,
+                        choices=["cpu", "gpu"],
+                        default="cpu",
+                        help='using which type of device to train')
     parser.set_defaults(dist_data_parallel=True)
     parser.add_argument('--process-group-backend',
                         type=str,
@@ -83,24 +86,31 @@ def main():
                         help='check cuda memory utilization every {interval} second')
     args = parser.parse_args()
     torch.cuda.init()
-    logging.info(f"torch.cuda.is_available(): {torch.cuda.is_available()}, torch.cuda.is_initialized(): {torch.cuda.is_initialized()}")
+    print(f"torch.cuda.is_available(): {torch.cuda.is_available()}, torch.cuda.is_initialized(): {torch.cuda.is_initialized()}")
     assert args.local_rank < args.world_size, "local rank cannot be greater than or equal to world size"
     # init singleton configuration object
-    init_config(master_addr=args.master_addr, master_port=args.master_port, world_size=args.world_size,
-                rank=args.rank, local_rank=args.local_rank, process_group_backend=args.process_group_backend,
+    init_config(master_addr=args.master_addr,
+                master_port=args.master_port,
+                world_size=args.world_size,
+                rank=args.rank,
+                local_rank=args.local_rank,
+                device_type=args.device_type,
+                process_group_backend=args.process_group_backend,
                 mem_utilization_monitor_interval=args.cuda_monitor_interval)
     process_group.setup()
-    model_profiler = generate_model_profiler(model_name=args.model, is_train=args.train,
+    mode = args.mode
+    model_profiler = generate_model_profiler(model_name=args.model,
+                                             mode=mode,
                                              is_DDP=args.dist_data_parallel)
-    logging.info(f"model profiler generated: model = {args.model}, starting profile for {args.duration_sec} seconds")
+    print(f"model profiler generated: model = {args.model}, starting profile for {args.duration_sec} seconds")
     profiled_iterator = model_profiler.profile(batch_size=args.batch_size, duration_sec=args.duration_sec)
+    print(f"model {args.model} profiling done, profiled_iterator: {profiled_iterator}")
     profiled_data = profiled_iterator.to_dict()
-    logging.info(f"model {args.model} profiling done")
     model = ProfiledDataModel(
         model_name=args.model,
         batch_size=args.batch_size,
         duration_sec=args.duration_sec,
-        is_train=args.train,
+        mode=mode,
         is_DDP=args.dist_data_parallel,
         process_group_backend=args.process_group_backend,
         world_size=args.world_size,
@@ -114,15 +124,16 @@ def main():
         total_time_ns=profiled_data.get("total_time_ns"),
         mem_infos=profiled_data.get("mem_infos"),
         utilization=profiled_data.get("utilization"),
+        extra_dict=profiled_data.get("extra_dict"),
         computation_proportion=args.computation_proportion,
     )
     session_id = args.session_id
     data_collector_url = args.data_collector_url
     response = requests.post(urljoin(data_collector_url, f"{session_id}/{args.rank}"), data=model.json())
     if response.status_code != http.HTTPStatus.OK:
-        logging.info(f"problem encountered sending profiled data to {data_collector_url}, status code = {response.status_code}")
+        print(f"problem encountered sending profiled data to {data_collector_url}, status code = {response.status_code}")
         sys.exit(-1)
-    logging.info(f"profiled data is sent to {data_collector_url}")
+    print(f"profiled data is sent to {data_collector_url}")
     return
 
 

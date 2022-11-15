@@ -22,6 +22,7 @@ model_names = [model_desc.value.name for model_desc in ModelDescriptions]
 
 config.load_kube_config()
 
+modes = ["train", "inference", "checkpoint"]
 
 class NodeSpec:
     def __init__(self, node_name: str, acc_specs: Dict[int, 'AccSpec'], ip_addr: str):
@@ -39,10 +40,6 @@ class AccSpec:
         self.acc_name: str = acc_name
         self.acc_device_id: int = acc_device_id
         self.acc_mem: int = acc_mem
-
-
-def train_or_inference(is_train: bool):
-    return "train" if is_train else "inference"
 
 
 @singleton
@@ -151,9 +148,8 @@ class Config:
             self.mono_jobs = list()
             for model_name, mono_job_spec_raw in mono_job_specs_raw.items():
                 assert model_name in model_names, f"wrong model name {model_name}"
-                for train_or_inference_text, job_spec_combinations in mono_job_spec_raw.items():
-                    assert train_or_inference_text in ["train", "inference"]
-                    is_train = train_or_inference_text == "train"
+                for mode, job_spec_combinations in mono_job_spec_raw.items():
+                    assert mode in modes
                     node_acc_device_ids_list = job_spec_combinations["node_acc_device_ids"]
                     for node_acc_device_ids in node_acc_device_ids_list:
                         node_names, device_ids = node_acc_device_ids
@@ -175,7 +171,7 @@ class Config:
                                 computation_proportion=computation_proportion,
                                 memory_proportion=memory_proportion,
                                 batch_size=batch_size,
-                                is_train=is_train
+                                mode=mode
                             ))
 
         if mono_job_specs_raw is not None:
@@ -223,7 +219,7 @@ class Config:
                                 job_idx, batch_size, computation_proportion, memory_proportion = mono_job_product
                                 mono_job = colocate_mono_jobs[job_idx]
                                 model_name = mono_job["model_name"]
-                                is_train = mono_job["is_train"]
+                                mode = mono_job["mode"]
                                 generated_colocate_mono_jobs.append(
                                     MonoJobConfig(
                                         model_name=model_name,
@@ -232,7 +228,7 @@ class Config:
                                         computation_proportion=computation_proportion,
                                         memory_proportion=memory_proportion,
                                         batch_size=batch_size,
-                                        is_train=is_train)
+                                        mode=mode)
                                 )
                             self.colocate_jobs.append(ColocateJobConfig(
                                 node_name=inn_node_name,
@@ -252,7 +248,7 @@ class MonoJobConfig:
                  computation_proportion: int,
                  memory_proportion: int,
                  batch_size: int,
-                 is_train: bool
+                 mode: str
                  ):
         self.model_name: str = model_name
         assert len(node_names) == len(acc_device_ids), "node_names与acc_device_ids应一一对应，每个device_id代表一个worker"
@@ -262,7 +258,7 @@ class MonoJobConfig:
         self.computation_proportion: int = computation_proportion
         self.memory_proportion: int = memory_proportion
         self.batch_size: int = batch_size
-        self.is_train: bool = is_train
+        self.mode: str = mode
         self.specified_session_id: Optional[str] = None
 
     def get_session_id(self) -> str:
@@ -278,13 +274,13 @@ class MonoJobConfig:
             node_acc_repr = f"{node_name}_{acc_repr}"
             node_acc_reprs.append(node_acc_repr)
         node_acc_reprs_str = "_".join(node_acc_reprs)
-        return f"mono_{self.model_name}_{train_or_inference(self.is_train)}_{node_acc_reprs_str}"
+        return f"mono_{self.model_name}_{self.mode}_{node_acc_reprs_str}"
 
     def generate_name(self, worker_id: int, uuid_value: str) -> str:
-        return f"profile-{self.model_name}-{self.batch_size}-{train_or_inference(self.is_train)}-{worker_id}-{uuid_value}".lower()
+        return f"profile-{self.model_name}-{self.batch_size}-{self.mode}-{worker_id}-{uuid_value}".lower()
 
     def __str__(self) -> str:
-        return f"mono_job: {self.model_name}-batch-size-{self.batch_size}-{train_or_inference(self.is_train)}"
+        return f"mono_job: {self.model_name}-batch-size-{self.batch_size}-{self.mode}"
 
 
 class ColocateJobConfig:
@@ -307,7 +303,7 @@ class ColocateJobConfig:
         model_desc_list = list()
         for mono_job_config in self.mono_job_configs:
             model_desc_list.append(
-                f"{mono_job_config.model_name}_{train_or_inference(mono_job_config.is_train)}_comp_{mono_job_config.computation_proportion}_bs_{mono_job_config.batch_size}")
+                f"{mono_job_config.model_name}_{mono_job_config.mode}_comp_{mono_job_config.computation_proportion}_bs_{mono_job_config.batch_size}")
         model_desc_str = "_".join(model_desc_list)
         return f"colocate_{node_acc_desc}_{model_desc_str}"
 
@@ -355,7 +351,8 @@ class Submitter:
                 str(c.options.profile_duration_sec),
                 "--batch-size",
                 str(mono_job_config.batch_size),
-                "--train" if mono_job_config.is_train else "--inference",
+                "--mode",
+                mono_job_config.mode,
                 "--computation-proportion",
                 str(mono_job_config.computation_proportion),
                 "--master-addr",
@@ -481,7 +478,7 @@ class Submitter:
                     logging.info(f"waiting for {waiting_for} seconds due to tencent bug...")
             c = Config()
             logging.info(f"submitted jobs: {job_names}")
-            maximum_waiting_duration = 3 * c.options.profile_duration_sec
+            maximum_waiting_duration = 1.5 * c.options.profile_duration_sec
             logging.info(f"waiting jobs to finish in {maximum_waiting_duration} seconds")
             FAIL = -1
             SUCCEED = 1

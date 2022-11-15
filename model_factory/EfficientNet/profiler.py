@@ -1,7 +1,7 @@
 import pathlib
 
 from model_factory.EfficientNet.models import load_efficient_net
-from model_factory.hub_common_profile import common_train_template
+from model_factory.hub_common_profile import common_train_template, common_checkpoint_template
 import torch
 
 from common import Config
@@ -15,11 +15,11 @@ utils = torch.hub.load(nvidia_path, "nvidia_convnets_processing_utils", source="
 image_input = utils.prepare_input_from_uri(str(pathlib.Path(__file__).parent / "test.jpg"))
 
 def efficient_net_rand_input(batch_size: int):
-    return torch.cat([image_input for _ in range(batch_size)]).to(Config().local_rank)
+    return torch.cat([image_input for _ in range(batch_size)]).to(Config().device)
 
 
 def efficient_net_rand_output():
-    return torch.rand((1,), device=Config().local_rank)
+    return torch.rand((1,), device=Config().device)
 
 
 class EfficientNetTrain(Profileable):
@@ -33,6 +33,12 @@ class EfficientNetInference(Profileable):
         model = load_efficient_net()
         return common_inference_template(model, batch_size, duration_sec, efficient_net_rand_input)
 
+
+class EfficientNetCheckpoint(Profileable):
+    def profile(self, batch_size: int, duration_sec: int) -> ProfileIterator:
+        model = load_efficient_net()
+        common_train_template(model, batch_size, 5, efficient_net_rand_input, efficient_net_rand_output)
+        return common_checkpoint_template(model, duration_sec)
 
 def do_test():
     from common import process_group
